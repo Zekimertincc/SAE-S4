@@ -1,12 +1,11 @@
 from bson import ObjectId
 from bson.errors import InvalidId
-from .model import Visitor
+from .visitors_model import Visitor
 
 
 class VisitorService:
     def __init__(self, bd):
         self.collection = bd['visitors']
-
 
     def get_by_id(self, visitor_id: str) -> dict | None:
         try:
@@ -40,6 +39,17 @@ class VisitorService:
             return result.deleted_count == 1
         except InvalidId:
             return False
+
+    def update(self, visitor_id: str, data: dict) -> dict | None:
+        try:
+            self.collection.update_one(
+                {"_id": ObjectId(visitor_id)},
+                {"$set": data}
+            )
+            doc = self.collection.find_one({"_id": ObjectId(visitor_id)})
+            return Visitor.serialize(doc)
+        except InvalidId:
+            return None
 
     def get_all(self, filters: dict) -> dict:
         query = {}

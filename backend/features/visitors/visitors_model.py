@@ -66,6 +66,6 @@ class Visitor:
             "ine": doc.get("ine"),
             "reorientation": doc.get("reorientation", False),
             "dossier_particulier": doc.get("dossier_particulier", False),
-            "created_at": doc.get("created_at", datetime.utcnow()).isoformat(),
+            "created_at": doc.get("created_at", datetime.now()).isoformat(),
             "visit_count": doc.get("visit_count", 1),
         }
