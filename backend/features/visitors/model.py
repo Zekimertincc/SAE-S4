@@ -24,6 +24,7 @@ class Visitor:
         self.created_at = datetime.now()
         self.visit_count = 1
 
+    # convertit l'objet en doc -> lus par mongo
     def to_dict(self) -> dict:
         return {
             "first_name": self.first_name,
@@ -36,4 +37,35 @@ class Visitor:
             "dossier_particulier": self.dossier_particulier,
             "created_at": self.created_at,
             "visit_count": self.visit_count,
+        }
+
+    @staticmethod
+    def from_dict(data: dict) -> "Visitor":
+        return Visitor(
+            first_name=data.get("first_name", ""),
+            last_name=data.get("last_name", ""),
+            email=data.get("email", ""),
+            bac_type=data.get("bac_type", ""),
+            department=data.get("department", ""),
+            ine=data.get("ine", None),
+            reorientation=bool(data.get("reorientation", False)),
+            dossier_particulier=bool(data.get("dossier_particulier", False)),
+        )
+
+    @staticmethod # convertit le doc mongo en dict json -> objectId pas lisible en json
+    def serialize(doc: dict) -> dict | None:
+        if doc is None:
+            return None
+        return {
+            "id": str(doc["_id"]),
+            "first_name": doc.get("first_name", ""),
+            "last_name": doc.get("last_name", ""),
+            "email": doc.get("email", ""),
+            "bac_type": doc.get("bac_type", ""),
+            "department": doc.get("department", ""),
+            "ine": doc.get("ine"),
+            "reorientation": doc.get("reorientation", False),
+            "dossier_particulier": doc.get("dossier_particulier", False),
+            "created_at": doc.get("created_at", datetime.utcnow()).isoformat(),
+            "visit_count": doc.get("visit_count", 1),
         }
