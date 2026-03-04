@@ -1,0 +1,122 @@
+[
+  {
+    "first_name": "Alice",
+    "last_name": "Martin",
+    "email": "alice.martin@mail.com",
+    "bac_type": "Général",
+    "department": "Informatique",
+    "ine": "1234567890A",
+    "reorientation": false,
+    "dossier_particulier": false,
+    "created_at": {"$date": "2026-03-03T10:00:00Z"},
+    "visit_count": 1
+  },
+  {
+    "first_name": "Lucas",
+    "last_name": "Dupont",
+    "email": "lucas.dupont@mail.com",
+    "bac_type": "STI2D",
+    "department": "GEII",
+    "ine": null,
+    "reorientation": false,
+    "dossier_particulier": false,
+    "created_at": {"$date": "2026-03-03T10:30:00Z"},
+    "visit_count": 1
+  },
+  {
+    "first_name": "Camille",
+    "last_name": "Bernard",
+    "email": "camille.bernard@mail.com",
+    "bac_type": "Général",
+    "department": "MMI",
+    "ine": "9876543210B",
+    "reorientation": true,
+    "dossier_particulier": false,
+    "created_at": {"$date": "2026-03-03T11:00:00Z"},
+    "visit_count": 2
+  },
+  {
+    "first_name": "Noah",
+    "last_name": "Petit",
+    "email": "noah.petit@mail.com",
+    "bac_type": "STMG",
+    "department": "TC",
+    "ine": null,
+    "reorientation": false,
+    "dossier_particulier": true,
+    "created_at": {"$date": "2026-03-03T11:30:00Z"},
+    "visit_count": 1
+  },
+  {
+    "first_name": "Emma",
+    "last_name": "Leroy",
+    "email": "emma.leroy@mail.com",
+    "bac_type": "Général",
+    "department": "Informatique",
+    "ine": "1122334455C",
+    "reorientation": false,
+    "dossier_particulier": false,
+    "created_at": {"$date": "2026-03-03T12:00:00Z"},
+    "visit_count": 1
+  },
+  {
+    "first_name": "Hugo",
+    "last_name": "Moreau",
+    "email": "hugo.moreau@mail.com",
+    "bac_type": "Pro",
+    "department": "GEII",
+    "ine": null,
+    "reorientation": true,
+    "dossier_particulier": false,
+    "created_at": {"$date": "2026-03-03T12:30:00Z"},
+    "visit_count": 1
+  },
+  {
+    "first_name": "Léa",
+    "last_name": "Simon",
+    "email": "lea.simon@mail.com",
+    "bac_type": "Général",
+    "department": "GEA",
+    "ine": "5566778899D",
+    "reorientation": false,
+    "dossier_particulier": false,
+    "created_at": {"$date": "2026-03-03T13:00:00Z"},
+    "visit_count": 1
+  },
+  {
+    "first_name": "Tom",
+    "last_name": "Laurent",
+    "email": "tom.laurent@mail.com",
+    "bac_type": "STI2D",
+    "department": "Informatique",
+    "ine": null,
+    "reorientation": false,
+    "dossier_particulier": true,
+    "created_at": {"$date": "2026-03-03T13:30:00Z"},
+    "visit_count": 1
+  },
+  {
+    "first_name": "Inès",
+    "last_name": "Garcia",
+    "email": "ines.garcia@mail.com",
+    "bac_type": "ST2S",
+    "department": "CS",
+    "ine": null,
+    "reorientation": true,
+    "dossier_particulier": false,
+    "created_at": {"$date": "2026-03-03T14:00:00Z"},
+    "visit_count": 1
+  },
+  {
+    "first_name": "Axel",
+    "last_name": "Roux",
+    "email": "axel.roux@mail.com",
+    "bac_type": "Autre",
+    "department": "MMI",
+    "ine": null,
+    "reorientation": false,
+    "dossier_particulier": false,
+    "created_at": {"$date": "2026-03-03T14:30:00Z"},
+    "visit_count": 1
+  }
+]
