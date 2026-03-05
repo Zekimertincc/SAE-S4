@@ -1,4 +1,4 @@
-from visitors_service import VisitorService
+from features.visitors.visitors_service import VisitorService
 from flask import Blueprint, request, jsonify, current_app
 
 visitors_bp = Blueprint("visitors", __name__)

@@ -1,10 +1,15 @@
 from flask import Flask
+from flask_cors import CORS
 from core.database import init_db
-
+from features.visitors.visitors_routes import visitors_bp
 app = Flask(__name__)
 app.config["MONGO_URI"] = "mongodb://localhost:27017/sae_jpo"
+app.config["JSON_ENSURE_ASCII"] = False
+CORS(app, origins=["http://localhost:3000"])
 
 init_db(app)
+
+app.register_blueprint(visitors_bp)
 
 @app.route("/")
 def index():
