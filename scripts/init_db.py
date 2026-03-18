@@ -131,5 +131,5 @@ visitors = [
 ]
 
 result = db["visitors"].insert_many(visitors)
-print(f"✓ {len(result.inserted_ids)} visiteurs insérés dans sae_jpo.visitors")
+print(f" {len(result.inserted_ids)} visiteurs insérés dans sae_jpo.visitors")
 print("Tu peux vérifier dans MongoDB Compass !")
