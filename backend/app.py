@@ -2,7 +2,7 @@ from flask import Flask
 from flask_cors import CORS
 from core.database import init_db
 from features.visitors.visitors_routes import visitors_bp
-from features.auth.routes import auth_bp
+from features.auth.auth_routes import auth_bp
 
 app = Flask(__name__)
 app.config["MONGO_URI"] = "mongodb://localhost:27017/sae_jpo"
