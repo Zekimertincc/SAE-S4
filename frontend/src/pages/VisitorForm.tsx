@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 
 const BAC_TYPES = ['Général', 'STI2D', 'STL', 'STMG', 'ST2S', 'PRO', 'Autre']
-const DEPARTMENTS = ['Informatique', 'GEII', 'TC', 'GEA', 'MMI', 'RT', 'Carrières Sociales']
+const DEPARTMENTS = ['Informatique', 'GACO', 'INFOCOM', 'QLIO']
 
 const schema = z.object({
   first_name: z.string().min(2, 'Minimum 2 caractères'),
