@@ -3,6 +3,8 @@ from flask_cors import CORS
 from core.database import init_db
 from features.visitors.visitors_routes import visitors_bp
 from features.auth.routes import auth_bp
+from features.stats.routes import stats_bp
+
 
 app = Flask(__name__)
 app.config["MONGO_URI"] = "mongodb://localhost:27017/sae_jpo"
@@ -13,6 +15,8 @@ init_db(app)
 
 app.register_blueprint(visitors_bp)
 app.register_blueprint(auth_bp)
+app.register_blueprint(stats_bp)
+
 
 @app.route("/")
 def index():
