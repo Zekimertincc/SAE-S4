@@ -32,6 +32,17 @@ class ManagerService:
         doc = self.col.find_one({"_id": result.inserted_id})
         return Manager.serialize(doc), 201
 
+    def update(self, manager_id: str, data: dict) -> dict | None:
+        try:
+            allowed = {k: v for k, v in data.items() if k in ["name", "role"]}
+            if not allowed:
+                return None
+            self.col.update_one({"_id": ObjectId(manager_id)}, {"$set": allowed})
+            doc = self.col.find_one({"_id": ObjectId(manager_id)})
+            return Manager.serialize(doc)
+        except InvalidId:
+            return None
+
     def update_password(self, email: str, new_password: str) -> dict | None:
         hashed = Security.hash_password(new_password)
         result = self.col.update_one(
