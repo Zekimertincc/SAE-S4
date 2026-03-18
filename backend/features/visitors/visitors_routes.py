@@ -1,3 +1,4 @@
+from core.auth_middleware import require_auth
 from features.visitors.visitors_service import VisitorService
 from flask import Blueprint, request, jsonify, current_app
 
@@ -24,12 +25,13 @@ def post_visitor():
 
 
 @visitors_bp.route("/api/visitors", methods=["GET"])
+@require_auth
 def list_visitors():
     result = get_service().get_all(request.args)
     return jsonify(result), 200
 
-
 @visitors_bp.route("/api/visitors/<visitor_id>", methods=["GET"])
+@require_auth
 def get_visitor(visitor_id):
     visitor = get_service().get_by_id(visitor_id)
     if not visitor:
@@ -38,6 +40,7 @@ def get_visitor(visitor_id):
 
 
 @visitors_bp.route("/api/visitors/<visitor_id>", methods=["PUT"])
+@require_auth
 def put_visitor(visitor_id):
     data = request.get_json()
     if not data:
@@ -49,6 +52,7 @@ def put_visitor(visitor_id):
 
 
 @visitors_bp.route("/api/visitors/<visitor_id>", methods=["DELETE"])
+@require_auth
 def del_visitor(visitor_id):
     success = get_service().delete(visitor_id)
     if not success:
