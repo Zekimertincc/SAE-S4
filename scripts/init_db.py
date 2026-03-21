@@ -3,8 +3,6 @@ from datetime import datetime, timedelta
 
 client = MongoClient("mongodb://localhost:27017/sae_jpo")
 db = client["sae_jpo"]
-
-# Vider la collection avant d'insérer
 db["visitors"].drop()
 print("Collection visitors vidée.")
 
@@ -23,7 +21,7 @@ visitors = [
         "etablissement": "Lycée Henri IV",
         "ville": "Paris",
         "immersion": True,
-        "created_at": datetime.utcnow() - timedelta(days=1),
+        "created_at": datetime.now() - timedelta(days=1),
         "visit_count": 1,
     },
     {
@@ -40,7 +38,7 @@ visitors = [
         "etablissement": "Lycée Galilée",
         "ville": "Noisy-le-Grand",
         "immersion": False,
-        "created_at": datetime.utcnow() - timedelta(days=1),
+        "created_at": datetime.now() - timedelta(days=1),
         "visit_count": 1,
     },
     {
@@ -57,7 +55,7 @@ visitors = [
         "etablissement": "Lycée Lumière",
         "ville": "Montreuil",
         "immersion": True,
-        "created_at": datetime.utcnow() - timedelta(hours=5),
+        "created_at": datetime.now() - timedelta(hours=5),
         "visit_count": 2,
     },
     {
@@ -74,7 +72,7 @@ visitors = [
         "etablissement": "Lycée Jean Jaurès",
         "ville": "Vincennes",
         "immersion": False,
-        "created_at": datetime.utcnow() - timedelta(hours=3),
+        "created_at": datetime.now() - timedelta(hours=3),
         "visit_count": 1,
     },
     {
@@ -91,7 +89,7 @@ visitors = [
         "etablissement": "Lycée Descartes",
         "ville": "Rosny-sous-Bois",
         "immersion": True,
-        "created_at": datetime.utcnow() - timedelta(hours=2),
+        "created_at": datetime.now() - timedelta(hours=2),
         "visit_count": 1,
     },
     {
@@ -108,7 +106,7 @@ visitors = [
         "etablissement": "Lycée Pro Montreuil",
         "ville": "Montreuil",
         "immersion": False,
-        "created_at": datetime.utcnow() - timedelta(hours=1),
+        "created_at": datetime.now() - timedelta(hours=1),
         "visit_count": 1,
     },
     {
@@ -125,7 +123,7 @@ visitors = [
         "etablissement": "Lycée Voltaire",
         "ville": "Paris",
         "immersion": True,
-        "created_at": datetime.utcnow() - timedelta(minutes=45),
+        "created_at": datetime.now() - timedelta(minutes=45),
         "visit_count": 1,
     },
     {
@@ -142,7 +140,7 @@ visitors = [
         "etablissement": "Lycée Léonard de Vinci",
         "ville": "Livry-Gargan",
         "immersion": False,
-        "created_at": datetime.utcnow() - timedelta(minutes=30),
+        "created_at": datetime.now() - timedelta(minutes=30),
         "visit_count": 1,
     },
     {
@@ -159,7 +157,7 @@ visitors = [
         "etablissement": "Lycée Saint-Exupéry",
         "ville": "Bagnolet",
         "immersion": True,
-        "created_at": datetime.utcnow() - timedelta(minutes=15),
+        "created_at": datetime.now() - timedelta(minutes=15),
         "visit_count": 1,
     },
     {
@@ -176,7 +174,7 @@ visitors = [
         "etablissement": "Lycée Picasso",
         "ville": "Fontenay-sous-Bois",
         "immersion": False,
-        "created_at": datetime.utcnow(),
+        "created_at": datetime.now(),
         "visit_count": 1,
     },
 ]
