@@ -30,7 +30,7 @@ export default function VisitorsTab({
   const [search, setSearch] = useState('')
   const totalPages = Math.ceil(total / limit)
 
-  // Filtrage local par nom/email (la pagination vient du backend)
+  // Filtration par nom/email (la pagination vient du backend)
   const filtered = visitors.filter((v) => {
     if (!search) return true
     const q = search.toLowerCase()
@@ -44,7 +44,7 @@ export default function VisitorsTab({
   return (
     <div className="flex flex-col gap-4">
 
-      {/* Barre de recherche + filtre */}
+      {/* recherhe truc */}
       <div className="flex flex-col sm:flex-row gap-3">
         <input
           type="text"
@@ -70,7 +70,7 @@ export default function VisitorsTab({
         </button>
       </div>
 
-      {/* Tableau */}
+      {/* tablo */}
       <div className="bg-white rounded-xl shadow overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -85,7 +85,7 @@ export default function VisitorsTab({
             </thead>
             <tbody className="divide-y divide-gray-100">
               {loading ? (
-                // Skeleton de chargement
+                // bura temel iskeleti
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i}>
                     {Array.from({ length: 7 }).map((_, j) => (
@@ -128,7 +128,7 @@ export default function VisitorsTab({
           </table>
         </div>
 
-        {/* Pagination */}
+       
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 text-sm">
             <span className="text-gray-400">
@@ -150,7 +150,7 @@ export default function VisitorsTab({
         )}
       </div>
 
-      {/* Boutons export */}
+      {/* export buton */}
       <div className="flex gap-3">
         <a
           href={getExportUrl()}
