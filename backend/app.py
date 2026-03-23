@@ -6,7 +6,7 @@ from features.auth.routes import auth_bp
 from features.stats.routes import stats_bp
 
 app = Flask(__name__)
-app.config["MONGO_URI"] = "mongodb://localhost:27017/sae_jpo"
+app.config["MONGO_URI"] = "mongodb+srv://zekimertinc:Zekimert1234@saesem4.kb6dnng.mongodb.net/jpo?appName=SaeSem4"
 app.config["MANAGER_PASSWORD"] = "admin123"
 app.config["JSON_ENSURE_ASCII"] = False
 

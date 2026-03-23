@@ -1,14 +1,16 @@
-class StatsService:
-    def __init__(self, db):
-        self.collection = db["visitors"]
+from flask import Blueprint, jsonify, current_app
+from features.stats.service import StatsService
 
-    def get_total(self):
-        return {"total_visitors": self.collection.count_documents({})}
+stats_bp = Blueprint("stats", __name__)
 
-    def get_by_department(self):
-        pipeline = [{"$group": {"_id": "$department", "count": {"$sum": 1}}}]
-        return {"by_department": [{"department": r["_id"], "count": r["count"]} for r in self.collection.aggregate(pipeline)]}
+@stats_bp.route("/api/stats/total", methods=["GET"])
+def stats_total():
+    return jsonify(StatsService(current_app.db).get_total()), 200
 
-    def get_by_bac_type(self):
-        pipeline = [{"$group": {"_id": "$bac_type", "count": {"$sum": 1}}}]
-        return {"by_bac_type": [{"bac_type": r["_id"], "count": r["count"]} for r in self.collection.aggregate(pipeline)]}
+@stats_bp.route("/api/stats/department", methods=["GET"])
+def stats_department():
+    return jsonify(StatsService(current_app.db).get_by_department()), 200
+
+@stats_bp.route("/api/stats/visitors", methods=["GET"])
+def stats_visitors():
+    return jsonify(StatsService(current_app.db).get_by_bac_type()), 200
