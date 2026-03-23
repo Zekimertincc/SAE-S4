@@ -1,3 +1,4 @@
+import csv, io
 from bson import ObjectId
 from bson.errors import InvalidId
 from .visitors_model import Visitor
@@ -75,3 +76,15 @@ class VisitorService:
             "data": [Visitor.serialize(d) for d in docs],
             "pagination": {"page": page, "limit": limit, "total": total}
         }
+    
+    def export_csv(self, fields=None):
+        
+        all_fields = ["id", "first_name", "last_name", "email", "bac_type", "department", "ine", "reorientation", "created_at"]
+        selected = [f for f in fields.split(",") if f in all_fields] if fields else all_fields
+        output = io.StringIO()
+        writer = csv.DictWriter(output, fieldnames=selected, extrasaction="ignore")
+        writer.writeheader()
+        for doc in self.collection.find({}):
+            row = Visitor.serialize(doc)
+            writer.writerow({k: row.get(k, "") for k in selected})
+        return output.getvalue()
