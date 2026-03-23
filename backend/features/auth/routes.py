@@ -7,7 +7,6 @@ from core.auth_middleware import require_auth
 
 auth_bp = Blueprint("auth", __name__)
 
-
 class AuthService:
     @staticmethod
     def generate_token(email: str) -> str:
@@ -45,7 +44,12 @@ def login():
         return jsonify({"error": "Identifiants invalides"}), 401
 
     token = AuthService.generate_token(email)
-    return jsonify({"token": token, "email": email, "name": manager.get("name", "")}), 200
+
+    return jsonify({
+        "token": token,
+        "email": email,
+        "name": manager.get("name", "")
+    }), 200
 
 
 @auth_bp.route("/api/admin/password", methods=["PUT"])
@@ -55,9 +59,12 @@ def change_password():
     if not data:
         return jsonify({"error": "Corps JSON requis"}), 400
 
-    email = data.get("email", "").strip().lower()
-    new_password = data.get("new_password", "").strip()
+    auth_header = request.headers.get("Authorization", "")
+    token = auth_header.split(" ")[1]
+    payload = jwt.decode(token, Config.SECRET_KEY, algorithms=["HS256"])
+    email = payload.get("sub")
 
+    new_password = data.get("new_password", "").strip()
     if len(new_password) < 6:
         return jsonify({"error": "Mot de passe trop court (6 caractères minimum)"}), 400
 

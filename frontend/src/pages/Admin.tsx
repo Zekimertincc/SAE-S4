@@ -4,9 +4,12 @@ import BarChart from '../components/BarChart'
 
 const API = 'http://127.0.0.1:5000/api'
 const DEPARTMENTS = ['Informatique', 'GEII', 'TC', 'GEA', 'MMI', 'RT', 'Carrières Sociales']
+const BAC_TYPES = ['Général', 'STI2D', 'STL', 'STMG', 'ST2S', 'PRO', 'Autre']
+const TOKEN_KEY = 'jpo_admin_token'
+
 
 interface Visitor {
-  _id: string
+  id: string
   first_name: string
   last_name: string
   email: string
@@ -23,23 +26,45 @@ interface Stats {
   by_bac_type: { bac_type: string; count: number }[]
 }
 
-function LoginForm({ onLogin }: { onLogin: () => void }) {
+function getStoredToken(): string {
+  return sessionStorage.getItem(TOKEN_KEY) ?? ''
+}
+
+function storeToken(token: string) {
+  sessionStorage.setItem(TOKEN_KEY, token)
+}
+
+function clearToken() {
+  sessionStorage.removeItem(TOKEN_KEY)
+}
+
+function LoginForm({ onLogin }: { onLogin: (token: string) => void }) {
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    setError('')
+    setLoading(true)
     try {
       const res = await fetch(`${API}/auth`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: 'admin', password }),
+        body: JSON.stringify({ email, password }),
       })
-      if (res.ok) onLogin()
-      else setError('Mot de passe incorrect.')
+      if (res.ok) {
+        const data = await res.json()
+        onLogin(data.token)
+      } else {
+        const data = await res.json()
+        setError(data.error ?? 'Identifiants incorrects.')
+      }
     } catch {
-      if (password.length > 0) onLogin()
-      else setError('Serveur inaccessible.')
+      setError('Serveur inaccessible.')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -50,15 +75,35 @@ function LoginForm({ onLogin }: { onLogin: () => void }) {
         <p className="text-gray-400 text-sm mb-6">IUT Montreuil — Accès réservé</p>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="admin@iut-montreuil.fr"
+              autoFocus
+              required
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••" autoFocus
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
           </div>
           {error && <p className="text-red-500 text-sm">{error}</p>}
-          <button type="submit"
-            className="bg-blue-600 text-white font-semibold rounded-xl py-2.5 hover:bg-blue-700 transition">
-            Se connecter
+          <button
+            type="submit"
+            disabled={loading}
+            className="bg-blue-600 text-white font-semibold rounded-xl py-2.5 hover:bg-blue-700 transition disabled:opacity-60"
+          >
+            {loading ? 'Connexion…' : 'Se connecter'}
           </button>
         </form>
         <p className="text-center text-xs text-gray-400 mt-4">
@@ -70,87 +115,138 @@ function LoginForm({ onLogin }: { onLogin: () => void }) {
 }
 
 export default function Admin() {
-  const [authed, setAuthed] = useState(false)
+  const [token, setToken] = useState<string>(getStoredToken)
+  const [authed, setAuthed] = useState<boolean>(() => Boolean(getStoredToken()))
+
   const [tab, setTab] = useState<'stats' | 'visitors'>('stats')
-  const [visitors, setVisitors] = useState<Visitor[]>([])
+  const [visiteurs, setVisiteurs] = useState<Visitor[]>([])
   const [stats, setStats] = useState<Stats | null>(null)
   const [total, setTotal] = useState(0)
-  const [search, setSearch] = useState('')
-  const [deptFilter, setDeptFilter] = useState('')
+
+  const [recherche, setRecherche] = useState('')
+  const [rechercheDebounce, setRechercheDebounce] = useState('')
+
+  const [filtreDep, setfiltreDep] = useState('')
+  const [filtreBac, setFiltreBac] = useState('')
+  const [filtreReo, setfiltreReo] = useState('')
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const LIMIT = 15
+  const [erreur, setErreur] = useState('')
+  const LIMITE = 15
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setRechercheDebounce(recherche)
+      setPage(1)
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [recherche])
 
   useEffect(() => {
     if (authed) fetchAll()
-  }, [authed, deptFilter, page])
+  }, [authed, filtreDep, filtreBac, filtreReo, rechercheDebounce, page])
+
+  function authHeaders() {
+    return { Authorization: `Bearer ${token}` }
+  }
 
   async function fetchAll() {
     setLoading(true)
-    setError('')
+    setErreur('')
     try {
-      const params = new URLSearchParams({ page: String(page), limit: String(LIMIT) })
-      if (deptFilter) params.set('department', deptFilter)
+      const params = new URLSearchParams({ page: String(page), limit: String(LIMITE) })
+      if (filtreDep) params.set('department', filtreDep)
+      if (filtreBac) params.set('bac_type', filtreBac)
+      if (filtreReo) params.set('reorientation', filtreReo)
+      if (rechercheDebounce) params.set('search', rechercheDebounce)
 
+      const hdrs = authHeaders()
       const [visRes, totalRes, deptRes, bacRes] = await Promise.all([
-        fetch(`${API}/visitors?${params}`),
-        fetch(`${API}/stats/total`),
-        fetch(`${API}/stats/department`),
-        fetch(`${API}/stats/visitors`),
+        fetch(`${API}/visitors?${params}`, { headers: hdrs }),
+        fetch(`${API}/stats/total`, { headers: hdrs }),
+        fetch(`${API}/stats/department`, { headers: hdrs }),
+        fetch(`${API}/stats/visitors`, { headers: hdrs }),
       ])
+
+      if (visRes.status === 401) {
+        handleDeconnexion()
+        return
+      }
 
       const visJson = await visRes.json()
       const totalJson = await totalRes.json()
       const deptJson = await deptRes.json()
       const bacJson = await bacRes.json()
 
-      setVisitors(visJson.data ?? [])
+      setVisiteurs(visJson.data ?? [])
       setTotal(visJson.pagination?.total ?? 0)
       setStats({
         total_visitors: totalJson.total_visitors ?? 0,
         by_department: deptJson.by_department ?? [],
         by_bac_type: bacJson.by_bac_type ?? [],
       })
-    } catch {
-      setError('API inaccessible — données de démo affichées.')
-      setVisitors([
-        { _id: '1', first_name: 'Marie', last_name: 'Dupont', email: 'marie@ex.fr', bac_type: 'Général', department: 'Informatique', reorientation: false, created_at: new Date().toISOString() },
-        { _id: '2', first_name: 'Lucas', last_name: 'Martin', email: 'lucas@ex.fr', bac_type: 'STI2D', department: 'GEII', reorientation: true, ine: '1234567890A', created_at: new Date().toISOString() },
-        { _id: '3', first_name: 'Camille', last_name: 'Bernard', email: 'camille@ex.fr', bac_type: 'Général', department: 'TC', reorientation: false, created_at: new Date().toISOString() },
-      ])
-      setTotal(148)
-      setStats({
-        total_visitors: 148,
-        by_department: [
-          { department: 'Informatique', count: 62 },
-          { department: 'GEII', count: 38 },
-          { department: 'TC', count: 24 },
-          { department: 'MMI', count: 18 },
-        ],
-        by_bac_type: [
-          { bac_type: 'Général', count: 89 },
-          { bac_type: 'STI2D', count: 32 },
-          { bac_type: 'STMG', count: 16 },
-          { bac_type: 'PRO', count: 11 },
-        ],
-      })
-    } finally {
+    }catch (err) {
+      setErreur("Impossible de charger les données. Vérifiez votre connexion au serveur.")
+    }
+    finally {
       setLoading(false)
     }
   }
 
-  if (!authed) return <LoginForm onLogin={() => setAuthed(true)} />
+async function handleExport(colonnes?: string) {
+  const params = new URLSearchParams()
+  let details = ""
 
-  const filtered = visitors.filter((v) => {
-    if (!search) return true
-    const q = search.toLowerCase()
-    return v.first_name.toLowerCase().includes(q) ||
-      v.last_name.toLowerCase().includes(q) ||
-      v.email.toLowerCase().includes(q)
+  if (filtreDep) {
+    params.set('department', filtreDep)
+    details += `_${filtreDep}`
+  }
+  if (filtreBac) {
+    params.set('bac_type', filtreBac)
+    details += `_${filtreBac}`
+  }
+  if (filtreReo) {
+    params.set('reorientation', filtreReo)
+    details += filtreReo === 'true' ? '_Reorientation' : '_Lyceen'
+  }
+  if (rechercheDebounce) {
+    params.set('search', rechercheDebounce)
+    details += '_FiltreRecherche'
+  }
+  if (colonnes) params.set('fields', colonnes)
+
+  const res = await fetch(`${API}/visitors/export?${params}`, {
+    headers: authHeaders()
   })
 
-  const totalPages = Math.ceil(total / LIMIT)
+  if (!res.ok) return alert("Erreur lors de l'export")
+
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const lien = document.createElement('a')
+  lien.href = url
+
+  const date = new Date().toISOString().split('T')[0]
+  lien.download = `export_${date}${details || '_complet'}.csv`
+
+  lien.click()
+}
+
+  function handleLogin(tok: string) {
+    storeToken(tok)
+    setToken(tok)
+    setAuthed(true)
+  }
+
+  function handleDeconnexion() {
+    clearToken()
+    setToken('')
+    setAuthed(false)
+  }
+
+  if (!authed) return <LoginForm onLogin={handleLogin} />
+
+  const totalPages = Math.ceil(total / LIMITE)
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -159,16 +255,9 @@ export default function Admin() {
           <h1 className="text-lg font-bold text-gray-800">Tableau de bord</h1>
           <p className="text-xs text-gray-400">IUT Montreuil — Journée Portes Ouvertes</p>
         </div>
-        <div className="flex items-center gap-3">
-          <a href={`${API}/visitors?export=csv`} download="visiteurs.csv"
-            className="text-sm border border-gray-200 rounded-lg px-4 py-2 text-gray-600 hover:bg-gray-50 transition">
-            Export CSV
-          </a>
-          <button onClick={() => setAuthed(false)}
-            className="text-sm text-gray-400 hover:text-gray-600 transition">
-            Déconnexion
-          </button>
-        </div>
+        <button onClick={handleDeconnexion} className="text-sm text-gray-400 hover:text-gray-600 transition">
+          Déconnexion
+        </button>
       </header>
 
       <div className="flex border-b border-gray-200 bg-white px-6">
@@ -183,9 +272,9 @@ export default function Admin() {
       </div>
 
       <main className="p-6 max-w-6xl mx-auto">
-        {error && (
+        {erreur && (
           <div className="mb-4 bg-yellow-50 border border-yellow-200 text-yellow-700 text-xs rounded-lg p-3">
-            {error}
+            {erreur}
           </div>
         )}
 
@@ -195,7 +284,7 @@ export default function Admin() {
               <StatCard label="Total visiteurs" value={stats?.total_visitors ?? '—'} />
               <StatCard label="Départements" value={stats?.by_department.length ?? '—'} />
               <StatCard label="Types de bac" value={stats?.by_bac_type.length ?? '—'} />
-              <StatCard label="Réorientations" value={visitors.filter((v) => v.reorientation).length} />
+              <StatCard label="Réorientations" value={visiteurs.filter((v) => v.reorientation).length} />
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div className="bg-white rounded-xl shadow p-5">
@@ -212,14 +301,25 @@ export default function Admin() {
 
         {tab === 'visitors' && (
           <div className="flex flex-col gap-4">
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
               <input type="text" placeholder="Rechercher par nom ou email…"
-                value={search} onChange={(e) => setSearch(e.target.value)}
-                className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1" />
-              <select value={deptFilter} onChange={(e) => { setDeptFilter(e.target.value); setPage(1) }}
+                value={recherche} onChange={(e) => setRecherche(e.target.value)}
+                className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1 min-w-[180px]" />
+              <select value={filtreDep} onChange={(e) => { setfiltreDep(e.target.value); setPage(1) }}
                 className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-48">
                 <option value="">Tous les départements</option>
                 {DEPARTMENTS.map((d) => <option key={d}>{d}</option>)}
+              </select>
+              <select value={filtreBac} onChange={(e) => { setFiltreBac(e.target.value); setPage(1) }}
+                className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-40">
+                <option value="">Tous les bacs</option>
+                {BAC_TYPES.map((b) => <option key={b}>{b}</option>)}
+              </select>
+              <select value={filtreReo} onChange={(e) => { setfiltreReo(e.target.value); setPage(1) }}
+                className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-44">
+                <option value="">Tous les profils</option>
+                <option value="true">Réorientation</option>
+                <option value="false">Lycéen</option>
               </select>
               <button onClick={fetchAll} disabled={loading}
                 className="border rounded-lg px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition disabled:opacity-50">
@@ -250,15 +350,15 @@ export default function Admin() {
                           ))}
                         </tr>
                       ))
-                    ) : filtered.length === 0 ? (
+                    ) : visiteurs.length === 0 ? (
                       <tr>
                         <td colSpan={7} className="px-4 py-10 text-center text-gray-400">
                           Aucun visiteur trouvé.
                         </td>
                       </tr>
                     ) : (
-                      filtered.map((v) => (
-                        <tr key={v._id} className="hover:bg-gray-50">
+                      visiteurs.map((v) => (
+                        <tr key={v.id} className="hover:bg-gray-50">
                           <td className="px-4 py-3 font-medium text-gray-800">{v.first_name} {v.last_name}</td>
                           <td className="px-4 py-3 text-gray-500">{v.email}</td>
                           <td className="px-4 py-3 text-gray-600">{v.bac_type}</td>
@@ -295,14 +395,14 @@ export default function Admin() {
             </div>
 
             <div className="flex gap-3">
-              <a href={`${API}/visitors?export=csv`} download="visiteurs.csv"
+              <button onClick={() => handleExport()}
                 className="text-sm border border-gray-200 rounded-lg px-4 py-2 text-gray-600 hover:bg-gray-50 transition">
                 Export complet (CSV)
-              </a>
-              <a href={`${API}/visitors?export=csv&fields=first_name,last_name,email`} download="emails.csv"
+              </button>
+              <button onClick={() => handleExport('first_name,last_name,email')}
                 className="text-sm border border-gray-200 rounded-lg px-4 py-2 text-gray-600 hover:bg-gray-50 transition">
                 Liste e-mails (CSV)
-              </a>
+              </button>
             </div>
           </div>
         )}

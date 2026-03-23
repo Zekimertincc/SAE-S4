@@ -23,7 +23,7 @@ class VisitorService:
         if existing_visitor:
             self.collection.update_one(
                 {'_id': existing_visitor['_id']},
-                {'$incr': {'visit_count': 1}}
+                {'$inc': {'visit_count': 1}}
             )
             updated_visitor = self.collection.find_one({'_id': existing_visitor['_id']})
             return Visitor.serialize(updated_visitor), 200
@@ -58,8 +58,17 @@ class VisitorService:
             query["department"] = filters["department"]
         if filters.get("bac_type"):
             query["bac_type"] = filters["bac_type"]
-        if filters.get("reorientation"):
+        if filters.get("reorientation") in ("true", "false"):
             query["reorientation"] = filters["reorientation"] == "true"
+
+        if filters.get("search"):
+            terme = filters["search"].strip()
+            regex = {"$regex": terme, "$options": "i"}
+            query["$or"] = [
+                {"first_name": regex},
+                {"last_name": regex},
+                {"email": regex},
+            ]
 
         page = int(filters.get("page", 1))
         limit = int(filters.get("limit", 10))

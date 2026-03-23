@@ -9,8 +9,7 @@ from features.stats.routes import stats_bp
 app = Flask(__name__)
 app.config["MONGO_URI"] = "mongodb://localhost:27017/sae_jpo"
 app.config["JSON_ENSURE_ASCII"] = False
-CORS(app, origins=["http://localhost:3000"])
-
+CORS(app, origins=["http://localhost:5173", "http://localhost:3000"])
 init_db(app)
 
 app.register_blueprint(visitors_bp)
