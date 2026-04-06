@@ -1,9 +1,6 @@
 import { useState } from 'react'
 import type { Visitor } from '../api/api'
-import { getExportUrl, updateVisitor, deleteVisitor } from '../api/api'
-
-const DEPARTMENTS = ['Informatique', 'GACO', 'INFOCOM', 'QLIO']
-const BAC_TYPES = ['Général', 'Technologique', 'STI2D', 'STMG', 'Pro', 'Autre']
+import { getExportUrl, updateVisitor, deleteVisitor, BAC_TYPES, DEPARTMENTS } from '../api/api'
 
 interface Props {
   visitors: Visitor[]

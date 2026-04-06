@@ -1,5 +1,8 @@
 const BASE_URL = 'http://127.0.0.1:5000/api'
 
+export const BAC_TYPES = ['Général', 'STI2D', 'STL', 'STMG', 'ST2S', 'PRO', 'Autre']
+export const DEPARTMENTS = ['Informatique', 'GACO', 'INFOCOM', 'QLIO']
+
 // ─── Types ───────────────────────────────────────────────
 
 export interface Visitor {
