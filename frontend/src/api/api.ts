@@ -85,7 +85,7 @@ export async function deleteVisitor(id: string): Promise<void> {
 export async function getStats(): Promise<Stats> {
   const totalRes = await fetch(`${BASE_URL}/stats/total`)
   const deptRes = await fetch(`${BASE_URL}/stats/department`)
-  const bacRes = await fetch(`${BASE_URL}/stats/visitors`)
+  const bacRes = await fetch(`${BASE_URL}/stats/bac_type`)
 
   const totalJson = await totalRes.json()
   const deptJson = await deptRes.json()
