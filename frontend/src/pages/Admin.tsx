@@ -7,6 +7,7 @@ import TabBar from '../components/TabBar'
 import type { TabKey } from '../components/TabBar'
 import StatsTab from '../components/StatsTab'
 import VisitorsTab from '../components/VisitorTab'
+import SettingsTab from '../components/SettingsTab'
 
 const LIMIT = 15
 
@@ -19,20 +20,21 @@ export default function Admin() {
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [deptFilter, setDeptFilter] = useState('')
+  const [bacFilter, setBacFilter] = useState('')
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
     if (authed) fetchAll()
-  }, [authed, deptFilter, page])
+  }, [authed, deptFilter, bacFilter, page])
 
   async function fetchAll() {
     setLoading(true)
     setError('')
     try {
       const [visitorsRes, statsRes] = await Promise.all([
-        getVisitors(page, LIMIT, deptFilter),
+        getVisitors(page, LIMIT, deptFilter, bacFilter),
         getStats(),
       ])
       setVisitors(visitorsRes.data)
@@ -73,11 +75,15 @@ export default function Admin() {
             limit={LIMIT}
             loading={loading}
             deptFilter={deptFilter}
-            onDeptFilterChange={setDeptFilter}
+            bacFilter={bacFilter}
+            onDeptFilterChange={(v) => { setDeptFilter(v); setPage(1) }}
+            onBacFilterChange={(v) => { setBacFilter(v); setPage(1) }}
             onPageChange={setPage}
             onRefresh={fetchAll}
           />
         )}
+
+        {tab === 'settings' && <SettingsTab />}
       </main>
 
     </div>

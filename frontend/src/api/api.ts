@@ -49,9 +49,10 @@ export async function login(password: string): Promise<boolean> {
 
 // ─── Visiteurs ───────────────────────────────────────────
 
-export async function getVisitors(page: number, limit: number, department: string): Promise<VisitorsResponse> {
+export async function getVisitors(page: number, limit: number, department: string, bacFilter = ''): Promise<VisitorsResponse> {
   let url = `${BASE_URL}/visitors?page=${page}&limit=${limit}`
   if (department) url += `&department=${department}`
+  if (bacFilter) url += `&bac_type=${encodeURIComponent(bacFilter)}`
 
   const res = await fetch(url)
   if (!res.ok) throw new Error('Erreur lors de la récupération des visiteurs')
@@ -102,6 +103,18 @@ export async function getStats(): Promise<Stats> {
 }
 
 // ─── Export CSV ──────────────────────────────────────────
+
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  const res = await fetch(`${BASE_URL}/admin/password`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+  })
+  if (!res.ok) {
+    const json = await res.json()
+    throw new Error(json.error || 'Erreur lors du changement de mot de passe')
+  }
+}
 
 export function getExportUrl(fields?: string): string {
   if (fields) return `${BASE_URL}/visitors/export?fields=${fields}`

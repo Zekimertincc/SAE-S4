@@ -9,7 +9,9 @@ interface Props {
   limit: number
   loading: boolean
   deptFilter: string
+  bacFilter: string
   onDeptFilterChange: (dept: string) => void
+  onBacFilterChange: (bac: string) => void
   onPageChange: (page: number) => void
   onRefresh: () => void
 }
@@ -32,7 +34,9 @@ export default function VisitorsTab({
   limit,
   loading,
   deptFilter,
+  bacFilter,
   onDeptFilterChange,
+  onBacFilterChange,
   onPageChange,
   onRefresh,
 }: Props) {
@@ -117,11 +121,19 @@ export default function VisitorsTab({
         />
         <select
           value={deptFilter}
-          onChange={(e) => { onDeptFilterChange(e.target.value); onPageChange(1) }}
+          onChange={(e) => onDeptFilterChange(e.target.value)}
           className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-48"
         >
           <option value="">Tous les départements</option>
           {DEPARTMENTS.map((d) => <option key={d}>{d}</option>)}
+        </select>
+        <select
+          value={bacFilter}
+          onChange={(e) => onBacFilterChange(e.target.value)}
+          className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-40"
+        >
+          <option value="">Tous les bacs</option>
+          {BAC_TYPES.map((b) => <option key={b}>{b}</option>)}
         </select>
         <button
           onClick={onRefresh}

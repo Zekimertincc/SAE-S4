@@ -2,6 +2,7 @@
 const TABS = [
   { key: 'stats', label: 'Statistiques' },
   { key: 'visitors', label: 'Visiteurs' },
+  { key: 'settings', label: 'Paramètres' },
 ] as const
 
 export type TabKey = (typeof TABS)[number]['key']
