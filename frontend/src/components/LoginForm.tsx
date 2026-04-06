@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { login } from '../api/api'
 
 interface Props {
   onLogin: () => void
@@ -7,14 +8,23 @@ interface Props {
 export default function LoginForm({ onLogin }: Props) {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    // to-do: remplacer par appel API quand backend pret
-    if (password === 'admin123') {
-      onLogin()
-    } else {
-      setError('Mot de passe incorrect.')
+    setLoading(true)
+    setError('')
+    try {
+      const success = await login(password)
+      if (success) {
+        onLogin()
+      } else {
+        setError('Mot de passe incorrect.')
+      }
+    } catch {
+      setError('Erreur de connexion au serveur.')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -44,9 +54,10 @@ export default function LoginForm({ onLogin }: Props) {
 
           <button
             type="submit"
-            className="bg-blue-600 text-white font-semibold rounded-xl py-2.5 hover:bg-blue-700 transition"
+            disabled={loading}
+            className="bg-blue-600 text-white font-semibold rounded-xl py-2.5 hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Se connecter
+            {loading ? 'Connexion...' : 'Se connecter'}
           </button>
         </form>
 
