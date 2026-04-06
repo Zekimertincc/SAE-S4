@@ -101,6 +101,6 @@ export async function getStats(): Promise<Stats> {
 // ─── Export CSV ──────────────────────────────────────────
 
 export function getExportUrl(fields?: string): string {
-  if (fields) return `${BASE_URL}/visitors?export=csv&fields=${fields}`
-  return `${BASE_URL}/visitors?export=csv`
+  if (fields) return `${BASE_URL}/visitors/export?fields=${fields}`
+  return `${BASE_URL}/visitors/export`
 }

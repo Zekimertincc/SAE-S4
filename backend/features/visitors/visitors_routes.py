@@ -29,6 +29,15 @@ def list_visitors():
     return jsonify(result), 200
 
 
+@visitors_bp.route("/api/visitors/export", methods=["GET"])
+def export_visitors():
+    from flask import Response
+    fields = request.args.get("fields")
+    csv_data = get_service().export_csv(fields)
+    return Response(csv_data, mimetype="text/csv",
+        headers={"Content-Disposition": "attachment; filename=visiteurs.csv"})
+
+
 @visitors_bp.route("/api/visitors/<visitor_id>", methods=["GET"])
 def get_visitor(visitor_id):
     visitor = get_service().get_by_id(visitor_id)
@@ -54,11 +63,3 @@ def del_visitor(visitor_id):
     if not success:
         return jsonify({"error": "Visiteur introuvable"}), 404
     return jsonify({"message": "Visiteur supprimé"}), 200
-
-@visitors_bp.route("/api/visitors/export", methods=["GET"])
-def export_visitors():
-    from flask import Response
-    fields = request.args.get("fields")
-    csv_data = get_service().export_csv(fields)
-    return Response(csv_data, mimetype="text/csv",
-        headers={"Content-Disposition": "attachment; filename=visiteurs.csv"})
