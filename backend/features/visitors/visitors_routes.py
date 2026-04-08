@@ -1,5 +1,8 @@
+import csv
+import io
+from core.auth_middleware import require_auth
 from features.visitors.visitors_service import VisitorService
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify, current_app, Response
 
 visitors_bp = Blueprint("visitors", __name__)
 
@@ -24,6 +27,7 @@ def post_visitor():
 
 
 @visitors_bp.route("/api/visitors", methods=["GET"])
+@require_auth
 def list_visitors():
     result = get_service().get_all(request.args)
     return jsonify(result), 200
@@ -31,14 +35,56 @@ def list_visitors():
 
 @visitors_bp.route("/api/visitors/export", methods=["GET"])
 def export_visitors():
-    from flask import Response
-    fields = request.args.get("fields")
-    csv_data = get_service().export_csv(fields)
-    return Response(csv_data, mimetype="text/csv",
-        headers={"Content-Disposition": "attachment; filename=visiteurs.csv"})
+    from core.auth_middleware import AuthMiddleware
+    auth_header = request.headers.get("Authorization", "")
+    token_from_query = request.args.get("token", "")
+    token = auth_header.replace("Bearer ", "") if auth_header.startswith("Bearer ") else token_from_query
+    if not token or AuthMiddleware.verify_token(token) is None:
+        return jsonify({"error": "Token manquant ou invalide"}), 401
+
+    db = current_app.db
+    query = {}
+
+    dep = request.args.get("department")
+    bac = request.args.get("bac_type")
+    reo = request.args.get("reorientation")
+    search = request.args.get("search")
+
+    if dep:
+        query["department"] = dep
+    if bac:
+        query["bac_type"] = bac
+    if reo:
+        query["reorientation"] = (reo.lower() == "true")
+    if search:
+        terme = search.strip()
+        query["$or"] = [
+            {"first_name": {"$regex": terme, "$options": "i"}},
+            {"last_name": {"$regex": terme, "$options": "i"}},
+            {"email": {"$regex": terme, "$options": "i"}},
+        ]
+
+    visitors = list(db.visitors.find(query))
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    fields_arg = request.args.get("fields")
+    columns = fields_arg.split(",") if fields_arg else ["first_name", "last_name", "email", "department", "bac_type", "created_at"]
+    writer.writerow(columns)
+
+    for v in visitors:
+        writer.writerow([v.get(col, "") for col in columns])
+
+    output.seek(0)
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment; filename=export.csv"}
+    )
 
 
 @visitors_bp.route("/api/visitors/<visitor_id>", methods=["GET"])
+@require_auth
 def get_visitor(visitor_id):
     visitor = get_service().get_by_id(visitor_id)
     if not visitor:
@@ -47,6 +93,7 @@ def get_visitor(visitor_id):
 
 
 @visitors_bp.route("/api/visitors/<visitor_id>", methods=["PUT"])
+@require_auth
 def put_visitor(visitor_id):
     data = request.get_json()
     if not data:
@@ -58,6 +105,7 @@ def put_visitor(visitor_id):
 
 
 @visitors_bp.route("/api/visitors/<visitor_id>", methods=["DELETE"])
+@require_auth
 def del_visitor(visitor_id):
     success = get_service().delete(visitor_id)
     if not success:

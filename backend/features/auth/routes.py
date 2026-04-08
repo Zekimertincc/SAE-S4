@@ -1,25 +1,55 @@
 from flask import Blueprint, request, jsonify, current_app
+from core.auth_middleware import require_auth
 from features.auth.service import AuthService
 
 auth_bp = Blueprint("auth", __name__)
 
+
+def get_service():
+    return AuthService(current_app.db)
+
 @auth_bp.route("/api/auth", methods=["POST"])
 def login():
     data = request.get_json()
-    if AuthService().check_password(data.get("password", "")):
-        return jsonify({"success": True}), 200
-    return jsonify({"error": "Mot de passe incorrect"}), 401
+    if not data:
+        return jsonify({"error": "Corps JSON requis"}), 400
+
+    password = data.get("password", "")
+    if not password:
+        return jsonify({"error": "Mot de passe requis"}), 400
+
+    result, status = get_service().login(password)
+    return jsonify(result), status
+
+
+@auth_bp.route("/api/auth/me", methods=["GET"])
+@require_auth
+def get_me():
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    manager = get_service().get_current_user(token)
+    if not manager:
+        return jsonify({"error": "Gestionnaire introuvable"}), 404
+    return jsonify(manager), 200
+
 
 @auth_bp.route("/api/admin/password", methods=["PUT"])
+@require_auth
 def change_password():
     data = request.get_json()
-    current_password = data.get("current_password", "")
-    new_password = data.get("new_password", "")
+    if not data:
+        return jsonify({"error": "Corps JSON requis"}), 400
 
-    if not AuthService().check_password(current_password):
-        return jsonify({"error": "Mot de passe actuel incorrect"}), 401
-    if not new_password or len(new_password) < 4:
-        return jsonify({"error": "Le nouveau mot de passe doit contenir au moins 4 caractères"}), 400
+    new_password = data.get("new_password", "").strip()
+    if len(new_password) < 6:
+        return jsonify({"error": "Mot de passe trop court (6 caractères minimum)"}), 400
 
-    current_app.config["MANAGER_PASSWORD"] = new_password
-    return jsonify({"success": True}), 200
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    email = AuthService.get_email_from_token(token)
+    if not email:
+        return jsonify({"error": "Token invalide"}), 401
+
+    from features.managers.managers_service import ManagerService
+    result = ManagerService(current_app.db).update_password(email, new_password)
+    if not result:
+        return jsonify({"error": "Gestionnaire introuvable"}), 404
+    return jsonify(result), 200

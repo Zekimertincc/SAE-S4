@@ -3,6 +3,20 @@ const BASE_URL = 'http://127.0.0.1:5000/api'
 export const BAC_TYPES = ['Général', 'STI2D', 'STL', 'STMG', 'ST2S', 'PRO', 'Autre']
 export const DEPARTMENTS = ['Informatique', 'GACO', 'INFOCOM', 'QLIO']
 
+// ─── Token storage ───────────────────────────────────────
+
+let _token: string | null = null
+
+export function getToken(): string | null {
+  return _token
+}
+
+function authHeaders(): Record<string, string> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (_token) headers['Authorization'] = `Bearer ${_token}`
+  return headers
+}
+
 // ─── Types ───────────────────────────────────────────────
 
 export interface Visitor {
@@ -44,7 +58,13 @@ export async function login(password: string): Promise<boolean> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ password }),
   })
-  return res.ok
+  if (!res.ok) return false
+  const json = await res.json()
+  if (json.token) {
+    _token = json.token
+    return true
+  }
+  return false
 }
 
 // ─── Visiteurs ───────────────────────────────────────────
@@ -54,7 +74,7 @@ export async function getVisitors(page: number, limit: number, department: strin
   if (department) url += `&department=${department}`
   if (bacFilter) url += `&bac_type=${encodeURIComponent(bacFilter)}`
 
-  const res = await fetch(url)
+  const res = await fetch(url, { headers: authHeaders() })
   if (!res.ok) throw new Error('Erreur lors de la récupération des visiteurs')
   return res.json()
 }
@@ -72,7 +92,7 @@ export async function createVisitor(data: object): Promise<Visitor> {
 export async function updateVisitor(id: string, data: object): Promise<Visitor> {
   const res = await fetch(`${BASE_URL}/visitors/${id}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: authHeaders(),
     body: JSON.stringify(data),
   })
   if (!res.ok) throw new Error('Erreur lors de la modification du visiteur')
@@ -80,7 +100,10 @@ export async function updateVisitor(id: string, data: object): Promise<Visitor> 
 }
 
 export async function deleteVisitor(id: string): Promise<void> {
-  const res = await fetch(`${BASE_URL}/visitors/${id}`, { method: 'DELETE' })
+  const res = await fetch(`${BASE_URL}/visitors/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  })
   if (!res.ok) throw new Error('Erreur lors de la suppression du visiteur')
 }
 
@@ -104,11 +127,11 @@ export async function getStats(): Promise<Stats> {
 
 // ─── Export CSV ──────────────────────────────────────────
 
-export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+export async function changePassword(_currentPassword: string, newPassword: string): Promise<void> {
   const res = await fetch(`${BASE_URL}/admin/password`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+    headers: authHeaders(),
+    body: JSON.stringify({ new_password: newPassword }),
   })
   if (!res.ok) {
     const json = await res.json()
@@ -117,6 +140,9 @@ export async function changePassword(currentPassword: string, newPassword: strin
 }
 
 export function getExportUrl(fields?: string): string {
-  if (fields) return `${BASE_URL}/visitors/export?fields=${fields}`
-  return `${BASE_URL}/visitors/export`
+  const params = new URLSearchParams()
+  if (fields) params.set('fields', fields)
+  if (_token) params.set('token', _token)
+  const qs = params.toString()
+  return qs ? `${BASE_URL}/visitors/export?${qs}` : `${BASE_URL}/visitors/export`
 }
