@@ -33,7 +33,8 @@ class AuthService:
             return payload.get("sub")
         return None
 
-    def login(self, email: str, password: str) -> tuple:
+    def login(self, password: str) -> tuple:
+        email = Config.MANAGER_EMAIL
         manager = self.manager_service.find_by_email(email)
         if not manager:
             return {"error": "Identifiants invalides"}, 401

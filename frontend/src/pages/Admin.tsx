@@ -23,23 +23,22 @@ interface Stats {
   by_bac_type: { bac_type: string; count: number }[]
 }
 
-function LoginForm({ onLogin }: { onLogin: () => void }) {
+function LoginForm({ onLogin }: { onLogin: (token: string) => void }) {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    try {
-      const res = await fetch(`${API}/auth`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: 'admin', password }),
-      })
-      if (res.ok) onLogin()
-      else setError('Mot de passe incorrect.')
-    } catch {
-      if (password.length > 0) onLogin()
-      else setError('Serveur inaccessible.')
+    const res = await fetch(`${API}/auth`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password }),
+    })
+    if (res.ok) {
+      const data = await res.json()
+      onLogin(data.token)
+    } else {
+      setError('Mot de passe incorrect.')
     }
   }
 
@@ -70,6 +69,7 @@ function LoginForm({ onLogin }: { onLogin: () => void }) {
 }
 
 export default function Admin() {
+  const [token, setToken] = useState('')
   const [authed, setAuthed] = useState(false)
   const [tab, setTab] = useState<'stats' | 'visitors'>('stats')
   const [visitors, setVisitors] = useState<Visitor[]>([])
@@ -89,12 +89,13 @@ export default function Admin() {
   async function fetchAll() {
     setLoading(true)
     setError('')
+    const headers = { Authorization: `Bearer ${token}` }
     try {
       const params = new URLSearchParams({ page: String(page), limit: String(LIMIT) })
       if (deptFilter) params.set('department', deptFilter)
 
       const [visRes, totalRes, deptRes, bacRes] = await Promise.all([
-        fetch(`${API}/visitors?${params}`),
+        fetch(`${API}/visitors?${params}`, { headers }),
         fetch(`${API}/stats/total`),
         fetch(`${API}/stats/department`),
         fetch(`${API}/stats/visitors`),
@@ -140,7 +141,18 @@ export default function Admin() {
     }
   }
 
-  if (!authed) return <LoginForm onLogin={() => setAuthed(true)} />
+  async function handleExport(filename: string, fields?: string) {
+    const url = fields ? `${API}/visitors/export?fields=${fields}` : `${API}/visitors/export`
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+    const blob = await res.blob()
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = filename
+    a.click()
+    URL.revokeObjectURL(a.href)
+  }
+
+  if (!authed) return <LoginForm onLogin={(t) => { setToken(t); setAuthed(true) }} />
 
   const filtered = visitors.filter((v) => {
     if (!search) return true
@@ -160,10 +172,10 @@ export default function Admin() {
           <p className="text-xs text-gray-400">IUT Montreuil — Journée Portes Ouvertes</p>
         </div>
         <div className="flex items-center gap-3">
-          <a href={`${API}/visitors?export=csv`} download="visiteurs.csv"
+          <button onClick={() => handleExport('visiteurs.csv')}
             className="text-sm border border-gray-200 rounded-lg px-4 py-2 text-gray-600 hover:bg-gray-50 transition">
             Export CSV
-          </a>
+          </button>
           <button onClick={() => setAuthed(false)}
             className="text-sm text-gray-400 hover:text-gray-600 transition">
             Déconnexion
@@ -295,14 +307,14 @@ export default function Admin() {
             </div>
 
             <div className="flex gap-3">
-              <a href={`${API}/visitors?export=csv`} download="visiteurs.csv"
+              <button onClick={() => handleExport('visiteurs.csv')}
                 className="text-sm border border-gray-200 rounded-lg px-4 py-2 text-gray-600 hover:bg-gray-50 transition">
                 Export complet (CSV)
-              </a>
-              <a href={`${API}/visitors?export=csv&fields=first_name,last_name,email`} download="emails.csv"
+              </button>
+              <button onClick={() => handleExport('emails.csv', 'first_name,last_name,email')}
                 className="text-sm border border-gray-200 rounded-lg px-4 py-2 text-gray-600 hover:bg-gray-50 transition">
                 Liste e-mails (CSV)
-              </a>
+              </button>
             </div>
           </div>
         )}

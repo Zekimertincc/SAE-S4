@@ -14,13 +14,11 @@ def login():
     if not data:
         return jsonify({"error": "Corps JSON requis"}), 400
 
-    email = data.get("email", "").strip().lower()
     password = data.get("password", "")
+    if not password:
+        return jsonify({"error": "Mot de passe requis"}), 400
 
-    if not email or not password:
-        return jsonify({"error": "Email et mot de passe requis"}), 400
-
-    result, status = get_service().login(email, password)
+    result, status = get_service().login(password)
     return jsonify(result), status
 
 
