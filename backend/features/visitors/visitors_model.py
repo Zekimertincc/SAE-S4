@@ -35,6 +35,10 @@ class Visitor:
         self.rgpd_consent = rgpd_consent
         self.created_at = datetime.utcnow()
         self.visit_count = 1
+        # Feedback (rempli après inscription via PATCH)
+        self.rating: int | None = None
+        self.comment: str | None = None
+        self.heard_from: str | None = None
 
     def to_dict(self) -> dict:
         return {
@@ -54,6 +58,9 @@ class Visitor:
             "rgpd_consent": self.rgpd_consent,
             "created_at": self.created_at,
             "visit_count": self.visit_count,
+            "rating": self.rating,
+            "comment": self.comment,
+            "heard_from": self.heard_from,
         }
 
     @staticmethod
@@ -97,4 +104,7 @@ class Visitor:
             "rgpd_consent": doc.get("rgpd_consent", False),
             "created_at": doc.get("created_at", datetime.utcnow()).isoformat(),
             "visit_count": doc.get("visit_count", 1),
+            "rating": doc.get("rating"),
+            "comment": doc.get("comment"),
+            "heard_from": doc.get("heard_from"),
         }

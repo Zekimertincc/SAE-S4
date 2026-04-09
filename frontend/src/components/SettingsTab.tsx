@@ -1,100 +1,88 @@
 import { useState } from 'react'
 import { changePassword } from '../api/api'
+import { C, font, inputStyle, labelStyle, btnPrimary, card } from '../theme'
 
 export default function SettingsTab() {
-  const [currentPassword, setCurrentPassword] = useState('')
-  const [newPassword, setNewPassword] = useState('')
-  const [confirm, setConfirm] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState(false)
-  const [error, setError] = useState('')
+  const [currentPwd, setCurrentPwd] = useState('')
+  const [newPwd,     setNewPwd]     = useState('')
+  const [confirm,    setConfirm]    = useState('')
+  const [loading,    setLoading]    = useState(false)
+  const [success,    setSuccess]    = useState(false)
+  const [error,      setError]      = useState('')
+
+  const focusStyle = { borderColor: C.bordeaux, boxShadow: `0 0 0 3px ${C.bordeauxLight}` }
+  const blurStyle  = { borderColor: C.border,   boxShadow: 'none' }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
     setSuccess(false)
-
-    if (newPassword !== confirm) {
-      setError('Les mots de passe ne correspondent pas.')
-      return
-    }
-    if (newPassword.length < 4) {
-      setError('Le nouveau mot de passe doit contenir au moins 4 caractères.')
-      return
-    }
-
+    if (newPwd !== confirm)     { setError('Les mots de passe ne correspondent pas.'); return }
+    if (newPwd.length < 4)      { setError('Minimum 4 caractères.'); return }
     setLoading(true)
     try {
-      await changePassword(currentPassword, newPassword)
+      await changePassword(currentPwd, newPwd)
       setSuccess(true)
-      setCurrentPassword('')
-      setNewPassword('')
-      setConfirm('')
+      setCurrentPwd(''); setNewPwd(''); setConfirm('')
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Erreur inconnue.')
-    } finally {
-      setLoading(false)
-    }
+    } finally { setLoading(false) }
   }
 
+  const field = (
+    label: string, value: string,
+    onChange: (v: string) => void,
+    placeholder = '••••••••',
+  ) => (
+    <div>
+      <label style={labelStyle}>{label}</label>
+      <input
+        type="password" value={value} placeholder={placeholder}
+        onChange={e => onChange(e.target.value)}
+        style={inputStyle()}
+        onFocus={e => Object.assign(e.currentTarget.style, focusStyle)}
+        onBlur={e  => Object.assign(e.currentTarget.style, blurStyle)}
+      />
+    </div>
+  )
+
   return (
-    <div className="max-w-md">
-      <div className="bg-white rounded-xl shadow p-6">
-        <h2 className="text-base font-bold text-gray-800 mb-1">Changer le mot de passe</h2>
-        <p className="text-xs text-gray-400 mb-5">Le changement est effectif immédiatement.</p>
-
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <div style={{ display: 'flex', justifyContent: 'center' }}>
+    <div style={{ maxWidth: '420px', width: '100%' }}>
+      <div style={{ ...card, padding: '24px' }}>
+        <div style={{ marginBottom: '20px', paddingBottom: '14px', borderBottom: `1px solid ${C.grayLight}`, display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ width: '4px', height: '22px', background: C.bordeaux, borderRadius: '2px' }} />
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Mot de passe actuel</label>
-            <input
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <p style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: C.anthracite, fontFamily: font }}>Changer le mot de passe</p>
+            <p style={{ margin: '2px 0 0', fontSize: '12px', color: C.gray, fontFamily: font }}>Le changement est effectif immédiatement.</p>
           </div>
+        </div>
 
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Nouveau mot de passe</label>
-            <input
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Confirmer le nouveau mot de passe</label>
-            <input
-              type="password"
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              placeholder="••••••••"
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontFamily: font }}>
+          {field('Mot de passe actuel',               currentPwd, setCurrentPwd)}
+          {field('Nouveau mot de passe',              newPwd,     setNewPwd)}
+          {field('Confirmer le nouveau mot de passe', confirm,    setConfirm)}
 
           {error && (
-            <p className="text-red-500 text-sm bg-red-50 rounded-lg px-3 py-2">{error}</p>
+            <div style={{ background: C.errorBg, border: `1px solid ${C.errorBorder}`, borderRadius: '8px', padding: '10px 14px', fontSize: '13px', color: C.bordeaux }}>
+              {error}
+            </div>
           )}
           {success && (
-            <p className="text-green-600 text-sm bg-green-50 rounded-lg px-3 py-2">
-              Mot de passe modifié avec succès.
-            </p>
+            <div style={{ background: C.saugeLight, border: `1px solid ${C.sauge}`, borderRadius: '8px', padding: '10px 14px', fontSize: '13px', color: C.saugeDark }}>
+              ✓ Mot de passe modifié avec succès.
+            </div>
           )}
 
           <button
-            type="submit"
-            disabled={loading}
-            className="bg-blue-600 text-white font-semibold rounded-lg py-2.5 hover:bg-blue-700 transition disabled:opacity-60"
+            type="submit" disabled={loading}
+            style={{ ...btnPrimary, opacity: loading ? 0.6 : 1, cursor: loading ? 'not-allowed' : 'pointer', marginTop: '4px' }}
           >
             {loading ? 'Modification…' : 'Modifier le mot de passe'}
           </button>
         </form>
       </div>
+    </div>
     </div>
   )
 }

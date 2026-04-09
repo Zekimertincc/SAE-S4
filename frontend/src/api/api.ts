@@ -34,8 +34,13 @@ export interface Visitor {
   ine?: string
   reorientation: boolean
   dossier_particulier: boolean
+  immersion: boolean
   created_at: string
   visit_count: number
+  // Feedback (optionnel)
+  rating?: number
+  comment?: string
+  heard_from?: string
 }
 
 export interface Stats {
@@ -104,6 +109,26 @@ export async function createVisitor(data: object): Promise<Visitor> {
   })
   if (!res.ok) throw new Error('Erreur lors de la création du visiteur')
   return res.json()
+}
+
+export async function getAllAvis(): Promise<Visitor[]> {
+  // Récupère tous les visiteurs (sans pagination) pour l'onglet Avis
+  const res = await fetch(`${BASE_URL}/visitors?page=1&limit=10000`, { headers: authHeaders() })
+  if (!res.ok) throw new Error('Erreur lors de la récupération des avis')
+  const json: VisitorsResponse = await res.json()
+  return json.data.filter(v => v.rating && v.rating > 0)
+}
+
+export async function submitFeedback(
+  id: string,
+  feedback: { rating?: number; comment?: string; heard_from?: string },
+): Promise<void> {
+  const res = await fetch(`${BASE_URL}/visitors/${id}/feedback`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(feedback),
+  })
+  if (!res.ok) throw new Error('Erreur lors de l\'envoi du feedback')
 }
 
 export async function updateVisitor(id: string, data: object): Promise<Visitor> {

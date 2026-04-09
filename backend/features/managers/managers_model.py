@@ -1,29 +1,20 @@
 from datetime import datetime
 from core.security import Security
 
+
 class Manager:
 
-    ROLES = ["admin", "secretaire", "responsable"]
-
-    def __init__(
-        self,
-        email: str,
-        password: str,
-        name: str,
-        role: str = "secretaire",
-    ):
-        self.email = email.strip().lower()
+    def __init__(self, username: str, password: str, name: str):
+        self.username = username.strip().lower()
         self.name = name.strip()
-        self.role = role if role in self.ROLES else "secretaire"
         self.password = Security.hash_password(password)
         self.created_at = datetime.now()
 
     def to_dict(self) -> dict:
         return {
-            "email": self.email,
+            "username": self.username,
             "password": self.password,
             "name": self.name,
-            "role": self.role,
             "created_at": self.created_at,
         }
 
@@ -33,8 +24,7 @@ class Manager:
             return None
         return {
             "id": str(doc["_id"]),
-            "email": doc.get("email", ""),
+            "username": doc.get("username", ""),
             "name": doc.get("name", ""),
-            "role": doc.get("role", ""),
-            "created_at": doc.get("created_at", datetime.utcnow()).isoformat(),
+            "created_at": doc.get("created_at", datetime.now()).isoformat(),
         }

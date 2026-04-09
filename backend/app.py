@@ -10,7 +10,7 @@ app = Flask(__name__)
 app.config["MONGO_URI"] = "mongodb://localhost:27017/sae_jpo"
 app.config["JSON_ENSURE_ASCII"] = False
 
-CORS(app, origins=["http://localhost:3000", "http://localhost:5173"], methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+CORS(app, origins=["http://localhost:3000", "http://localhost:5173"], methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
 
 init_db(app)
 

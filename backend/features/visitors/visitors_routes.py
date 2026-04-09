@@ -109,6 +109,42 @@ def get_visitor(visitor_id):
     return jsonify(visitor), 200
 
 
+@visitors_bp.route("/api/visitors/<visitor_id>/feedback", methods=["POST"])
+def patch_feedback(visitor_id):
+    """Reçoit l'avis du visiteur juste après son inscription (pas d'auth requise)."""
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Corps JSON requis"}), 400
+
+    rating = data.get("rating")
+    if rating is not None and not isinstance(rating, int):
+        return jsonify({"error": "rating doit être un entier 1-5"}), 400
+    if rating is not None and not (1 <= rating <= 5):
+        return jsonify({"error": "rating doit être entre 1 et 5"}), 400
+
+    update = {}
+    if rating is not None:
+        update["rating"] = rating
+    if "comment" in data:
+        update["comment"] = str(data["comment"]).strip() or None
+    if "heard_from" in data:
+        update["heard_from"] = str(data["heard_from"]).strip() or None
+
+    if not update:
+        return jsonify({"error": "Aucun champ à mettre à jour"}), 400
+
+    from bson import ObjectId
+    db = current_app.db
+    result = db.visitors.find_one_and_update(
+        {"_id": ObjectId(visitor_id)},
+        {"$set": update},
+        return_document=True,
+    )
+    if not result:
+        return jsonify({"error": "Visiteur introuvable"}), 404
+    return jsonify({"ok": True}), 200
+
+
 @visitors_bp.route("/api/visitors/<visitor_id>", methods=["PUT"])
 @require_auth
 def put_visitor(visitor_id):

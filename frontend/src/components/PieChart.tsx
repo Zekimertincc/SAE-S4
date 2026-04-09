@@ -1,44 +1,82 @@
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6']
+import { C, font } from '../theme'
 
-function arcPath(cx: number, cy: number, r: number, startDeg: number, endDeg: number) {
-  const toRad = (deg: number) => (deg * Math.PI) / 180
-  const x1 = cx + r * Math.cos(toRad(startDeg))
-  const y1 = cy + r * Math.sin(toRad(startDeg))
-  const x2 = cx + r * Math.cos(toRad(endDeg))
-  const y2 = cy + r * Math.sin(toRad(endDeg))
-  const largeArc = endDeg - startDeg > 180 ? 1 : 0
-  return `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z`
+const COLORS = [
+  C.bordeaux,
+  C.sauge,
+  '#C4526F',
+  '#4e8c80',
+  '#8b5cf6',
+  '#d97706',
+  '#0ea5e9',
+  '#ec4899',
+]
+
+function donutPath(
+  cx: number, cy: number,
+  outerR: number, innerR: number,
+  startDeg: number, endDeg: number,
+) {
+  const toRad = (d: number) => (d * Math.PI) / 180
+  const s = startDeg, e = endDeg
+  const x1 = cx + outerR * Math.cos(toRad(s))
+  const y1 = cy + outerR * Math.sin(toRad(s))
+  const x2 = cx + outerR * Math.cos(toRad(e))
+  const y2 = cy + outerR * Math.sin(toRad(e))
+  const x3 = cx + innerR * Math.cos(toRad(e))
+  const y3 = cy + innerR * Math.sin(toRad(e))
+  const x4 = cx + innerR * Math.cos(toRad(s))
+  const y4 = cy + innerR * Math.sin(toRad(s))
+  const large = e - s > 180 ? 1 : 0
+  return `M ${x1} ${y1} A ${outerR} ${outerR} 0 ${large} 1 ${x2} ${y2} L ${x3} ${y3} A ${innerR} ${innerR} 0 ${large} 0 ${x4} ${y4} Z`
 }
 
 export default function PieChart({ data }: { data: { label: string; value: number }[] }) {
-  const total = data.reduce((sum, d) => sum + d.value, 0)
+  const total = data.reduce((s, d) => s + d.value, 0)
 
   if (total === 0) {
-    return <p className="text-sm text-gray-400 text-center py-8">Aucune donnée</p>
+    return (
+      <p style={{ textAlign: 'center', color: C.gray, fontSize: '13px', padding: '24px 0', fontFamily: font }}>
+        Aucune donnée
+      </p>
+    )
   }
 
-  let angle = -90 // on part du haut (12h)
+  let angle = -90
+  const slices = data.map((item, i) => {
+    const sweep = item.value / total === 1 ? 359.99 : (item.value / total) * 360
+    const path  = donutPath(100, 100, 90, 52, angle, angle + sweep)
+    angle += sweep
+    return { ...item, path, color: COLORS[i % COLORS.length] }
+  })
 
   return (
-    <div className="flex items-center gap-6 flex-wrap">
-      <svg width="160" height="160" viewBox="0 0 200 200" className="flex-shrink-0">
-        {data.map((item, i) => {
-          // Si un seul segment, on évite start === end (dégénéré en SVG)
-          const slice = item.value / total === 1 ? 359.99 : (item.value / total) * 360
-          const path = arcPath(100, 100, 90, angle, angle + slice)
-          angle += slice
-          return <path key={item.label} d={path} fill={COLORS[i % COLORS.length]} />
-        })}
-      </svg>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap', fontFamily: font }}>
+      <div style={{ position: 'relative', flexShrink: 0, width: '150px', height: '150px' }}>
+        <svg width="150" height="150" viewBox="0 0 200 200">
+          {slices.map(s => (
+            <path key={s.label} d={s.path} fill={s.color} />
+          ))}
+          <text x="100" y="96"  textAnchor="middle" fontSize="22" fontWeight="800" fill={C.anthracite}>{total}</text>
+          <text x="100" y="114" textAnchor="middle" fontSize="11" fill={C.gray}>visiteurs</text>
+        </svg>
+      </div>
 
-      <div className="flex flex-col gap-2">
-        {data.map((item, i) => (
-          <div key={item.label} className="flex items-center gap-2 text-sm">
-            <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-            <span className="text-gray-600">{item.label}</span>
-            <span className="font-semibold text-gray-800 ml-1">{item.value}</span>
-          </div>
-        ))}
+      {/* legend */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '7px', flex: 1, minWidth: '120px' }}>
+        {slices.map(s => {
+          const pct = Math.round((s.value / total) * 100)
+          return (
+            <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ width: '10px', height: '10px', borderRadius: '3px', background: s.color, flexShrink: 0 }} />
+              <span style={{ fontSize: '12px', color: C.anthracite, flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {s.label}
+              </span>
+              <span style={{ fontSize: '12px', fontWeight: 700, color: C.gray, flexShrink: 0 }}>
+                {s.value} <span style={{ fontWeight: 400, color: '#aaa' }}>({pct}%)</span>
+              </span>
+            </div>
+          )
+        })}
       </div>
     </div>
   )

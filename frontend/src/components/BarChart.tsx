@@ -1,23 +1,61 @@
-const BAR_MAX_PX = 120
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6']
+import { C, font } from '../theme'
 
-export default function BarChart({ data }: { data: { label: string; count: number }[] }) {
-  const max = Math.max(...data.map((d) => d.count), 1)
+const COLORS = [
+  C.bordeaux,
+  C.sauge,
+  '#C4526F',
+  '#4e8c80',
+  '#8b5cf6',
+  '#d97706',
+  '#0ea5e9',
+  '#ec4899',
+]
+
+interface BarItem { label: string; count: number }
+
+export default function BarChart({ data }: { data: BarItem[] }) {
+  if (!data.length) {
+    return (
+      <p style={{ textAlign: 'center', color: C.gray, fontSize: '13px', padding: '24px 0', fontFamily: font }}>
+        Aucune donnée
+      </p>
+    )
+  }
+
+  const max = Math.max(...data.map(d => d.count), 1)
+
   return (
-    <div className="flex items-end gap-3">
-      {data.map((item, i) => (
-        <div key={item.label} className="flex flex-col items-center gap-1 flex-1">
-          <span className="text-xs font-semibold text-gray-700">{item.count}</span>
-          <div
-            className="w-full rounded-t-md"
-            style={{
-              height: `${Math.max((item.count / max) * BAR_MAX_PX, 4)}px`,
-              backgroundColor: COLORS[i % COLORS.length],
-            }}
-          />
-          <span className="text-xs text-gray-500 truncate w-full text-center">{item.label}</span>
-        </div>
-      ))}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontFamily: font }}>
+      {data.map((item, i) => {
+        const pct = Math.max((item.count / max) * 100, 2)
+        const color = COLORS[i % COLORS.length]
+        return (
+          <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{
+              width: '80px', flexShrink: 0,
+              fontSize: '12px', color: C.anthracite, fontWeight: 500,
+              textAlign: 'right', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            }}>
+              {item.label}
+            </div>
+
+            <div style={{ flex: 1, height: '26px', background: '#f1f1f1', borderRadius: '6px', overflow: 'hidden' }}>
+              <div style={{
+                width: `${pct}%`,
+                height: '100%',
+                background: color,
+                borderRadius: '6px',
+                display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
+                paddingRight: '8px',
+                transition: 'width 0.4s ease',
+                minWidth: '26px',
+              }}>
+                <span style={{ fontSize: '11px', fontWeight: 700, color: '#fff' }}>{item.count}</span>
+              </div>
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }
