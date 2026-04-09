@@ -1,5 +1,6 @@
 import StatCard from './StatCard'
 import BarChart from './BarChart'
+import PieChart from './PieChart'
 import type { Stats, Visitor } from '../api/api'
 
 interface Props {
@@ -40,6 +41,26 @@ export default function StatsTab({ stats, visitors }: Props) {
             data={(stats?.by_bac_type ?? []).map((d) => ({
               label: d.bac_type,
               count: d.count,
+            }))}
+          />
+        </div>
+
+        <div className="bg-white rounded-xl shadow p-5">
+          <h2 className="font-semibold text-gray-700 mb-4">Répartition par département</h2>
+          <PieChart
+            data={(stats?.by_department ?? []).map((d) => ({
+              label: d.department,
+              value: d.count,
+            }))}
+          />
+        </div>
+
+        <div className="bg-white rounded-xl shadow p-5">
+          <h2 className="font-semibold text-gray-700 mb-4">Répartition par bac</h2>
+          <PieChart
+            data={(stats?.by_bac_type ?? []).map((d) => ({
+              label: d.bac_type,
+              value: d.count,
             }))}
           />
         </div>

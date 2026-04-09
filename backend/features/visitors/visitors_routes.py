@@ -22,6 +22,10 @@ def post_visitor():
     if missing:
         return jsonify({"error": f"Champs manquants : {', '.join(missing)}"}), 400
 
+    # RGPD : le consentement explicite est obligatoire
+    if data.get("rgpd_consent") is not True:
+        return jsonify({"error": "Le consentement RGPD est obligatoire"}), 400
+
     result, status = get_service().create(data)
     return jsonify(result), status
 

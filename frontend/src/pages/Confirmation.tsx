@@ -60,6 +60,11 @@ export default function Confirmation() {
           ))}
         </div>
 
+        <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 mt-4 text-xs text-blue-700 leading-relaxed">
+          Vos données ont été collectées dans le cadre de la Journée Portes Ouvertes de l'IUT de Montreuil.
+          Elles sont accessibles uniquement aux gestionnaires autorisés et seront <strong>supprimées automatiquement après 120 jours</strong>, conformément à votre consentement RGPD.
+        </div>
+
         <div className="flex gap-3 mt-6">
           <button onClick={() => navigate('/')}
             className="flex-1 border border-gray-200 rounded-xl py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition">

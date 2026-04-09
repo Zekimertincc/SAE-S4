@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import { BAC_TYPES, DEPARTMENTS } from '../api/api'
@@ -15,6 +15,37 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>
 type Errors = Partial<Record<keyof FormData, string>>
+
+function RgpdModal({ onAccept, onClose }: { onAccept: () => void; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-7 flex flex-col gap-4">
+        <h2 className="text-lg font-bold text-gray-800">Informations sur vos données personnelles</h2>
+        <div className="text-sm text-gray-600 flex flex-col gap-3">
+          <p>Vos données sont collectées dans le cadre de la <strong>Journée Portes Ouvertes de l'IUT de Montreuil</strong>.</p>
+          <p>Elles sont utilisées pour le suivi des visiteurs et la communication post-JPO (informations sur les formations, propositions d'immersion).</p>
+          <p>Elles sont accessibles <strong>uniquement aux gestionnaires autorisés</strong> de l'IUT. Elles ne sont pas transmises à des tiers.</p>
+          <p>Elles sont <strong>supprimées automatiquement après 120 jours</strong>, conformément à la période Parcoursup.</p>
+          <p>Vous pouvez exercer vos droits d'accès, de rectification ou de suppression en contactant l'administration de l'IUT.</p>
+        </div>
+        <div className="flex gap-3 justify-end">
+          <button
+            onClick={onClose}
+            className="text-sm text-gray-500 px-4 py-2 rounded-xl hover:bg-gray-100 transition"
+          >
+            Fermer
+          </button>
+          <button
+            onClick={onAccept}
+            className="bg-blue-600 text-white text-sm font-medium px-5 py-2 rounded-xl hover:bg-blue-700 transition"
+          >
+            J'accepte
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function fieldClass(error?: string) {
   return `w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
@@ -33,6 +64,8 @@ export default function VisitorForm() {
   const [errors, setErrors] = useState<Errors>({})
   const [loading, setLoading] = useState(false)
   const [apiError, setApiError] = useState('')
+  const [showRgpdModal, setShowRgpdModal] = useState(false)
+  const [rgpdConsent, setRgpdConsent] = useState(false)
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     const { name, value, type } = e.target
@@ -76,7 +109,7 @@ export default function VisitorForm() {
       const res = await fetch('http://127.0.0.1:5000/api/visitors', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(result.data),
+        body: JSON.stringify({ ...result.data, rgpd_consent: true }),
       })
       if (!res.ok) throw new Error()
       const visitor = await res.json()
@@ -89,6 +122,13 @@ export default function VisitorForm() {
   }
 
   return (
+    <>
+    {showRgpdModal && (
+      <RgpdModal
+        onAccept={() => { setRgpdConsent(true); setShowRgpdModal(false) }}
+        onClose={() => setShowRgpdModal(false)}
+      />
+    )}
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-md w-full max-w-lg p-8">
         <h1 className="text-2xl font-bold text-gray-800 mb-1">Journée Portes Ouvertes</h1>
@@ -157,14 +197,35 @@ export default function VisitorForm() {
             <span className="text-sm text-gray-700">Je suis en cours de réorientation</span>
           </label>
 
-          <p className="text-xs text-gray-400 bg-gray-50 rounded-lg p-3">
-            Vos données sont collectées dans le cadre de la JPO et supprimées après Parcoursup (RGPD).
-          </p>
+          {rgpdConsent ? (
+            <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2.5">
+              <svg className="w-4 h-4 text-green-500 flex-shrink-0" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 13l4 4L19 7" />
+              </svg>
+              <span className="text-sm text-green-700">Consentement RGPD accepté</span>
+              <button
+                type="button"
+                onClick={() => setRgpdConsent(false)}
+                className="ml-auto text-xs text-green-600 hover:underline"
+              >
+                Annuler
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowRgpdModal(true)}
+              className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-100 transition text-left"
+            >
+              Lire et accepter les conditions RGPD <span className="text-red-400">*</span>
+            </button>
+          )}
 
           {apiError && <p className="text-red-500 text-sm bg-red-50 rounded-lg p-3">{apiError}</p>}
 
-          <button type="submit" disabled={loading}
-            className="bg-blue-600 text-white font-semibold rounded-xl py-3 hover:bg-blue-700 transition disabled:opacity-60">
+          <button type="submit" disabled={loading || !rgpdConsent}
+            className="bg-blue-600 text-white font-semibold rounded-xl py-3 hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
             {loading ? 'Envoi…' : 'Valider mon inscription'}
           </button>
         </form>
@@ -174,5 +235,6 @@ export default function VisitorForm() {
         </p>
       </div>
     </div>
+    </>
   )
 }

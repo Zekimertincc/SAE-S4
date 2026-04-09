@@ -17,6 +17,7 @@ class Visitor:
         etablissement: str = None,
         ville: str = None,
         immersion: bool = False,
+        rgpd_consent: bool = False,
     ):
         self.first_name = first_name.strip()
         self.last_name = last_name.strip()
@@ -31,7 +32,8 @@ class Visitor:
         self.etablissement = etablissement
         self.ville = ville
         self.immersion = immersion
-        self.created_at = datetime.now()
+        self.rgpd_consent = rgpd_consent
+        self.created_at = datetime.utcnow()
         self.visit_count = 1
 
     def to_dict(self) -> dict:
@@ -49,6 +51,7 @@ class Visitor:
             "etablissement": self.etablissement,
             "ville": self.ville,
             "immersion": self.immersion,
+            "rgpd_consent": self.rgpd_consent,
             "created_at": self.created_at,
             "visit_count": self.visit_count,
         }
@@ -69,6 +72,7 @@ class Visitor:
             etablissement=data.get("etablissement", None),
             ville=data.get("ville", None),
             immersion=bool(data.get("immersion", False)),
+            rgpd_consent=bool(data.get("rgpd_consent", False)),
         )
 
     @staticmethod
@@ -90,6 +94,7 @@ class Visitor:
             "etablissement": doc.get("etablissement"),
             "ville": doc.get("ville"),
             "immersion": doc.get("immersion", False),
+            "rgpd_consent": doc.get("rgpd_consent", False),
             "created_at": doc.get("created_at", datetime.utcnow()).isoformat(),
             "visit_count": doc.get("visit_count", 1),
         }
