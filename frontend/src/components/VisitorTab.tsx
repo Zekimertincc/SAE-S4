@@ -10,8 +10,14 @@ interface Props {
   loading: boolean
   deptFilter: string
   bacFilter: string
+  reoFilter: string
+  dateFilter: string
+  searchFilter: string
   onDeptFilterChange: (dept: string) => void
   onBacFilterChange: (bac: string) => void
+  onReoFilterChange: (reo: string) => void
+  onDateFilterChange: (date: string) => void
+  onSearchChange: (search: string) => void
   onPageChange: (page: number) => void
   onRefresh: () => void
 }
@@ -35,28 +41,23 @@ export default function VisitorsTab({
   loading,
   deptFilter,
   bacFilter,
+  reoFilter,
+  dateFilter,
+  searchFilter,
   onDeptFilterChange,
   onBacFilterChange,
+  onReoFilterChange,
+  onDateFilterChange,
+  onSearchChange,
   onPageChange,
   onRefresh,
 }: Props) {
-  const [search, setSearch] = useState('')
   const [editingVisitor, setEditingVisitor] = useState<Visitor | null>(null)
   const [editForm, setEditForm] = useState<EditForm | null>(null)
   const [saving, setSaving] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const totalPages = Math.ceil(total / limit)
-
-  const filtered = visitors.filter((v) => {
-    if (!search) return true
-    const q = search.toLowerCase()
-    return (
-      v.first_name.toLowerCase().includes(q) ||
-      v.last_name.toLowerCase().includes(q) ||
-      v.email.toLowerCase().includes(q)
-    )
-  })
 
   function openEdit(v: Visitor) {
     setEditingVisitor(v)
@@ -111,18 +112,18 @@ export default function VisitorsTab({
     <div className="flex flex-col gap-4">
 
       {/* filtres */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex gap-2 items-center w-full">
         <input
           type="text"
-          placeholder="Rechercher par nom ou email…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1"
+          placeholder="Nom, email ou INE…"
+          value={searchFilter}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1 min-w-0"
         />
         <select
           value={deptFilter}
           onChange={(e) => onDeptFilterChange(e.target.value)}
-          className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-48"
+          className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1 min-w-0"
         >
           <option value="">Tous les départements</option>
           {DEPARTMENTS.map((d) => <option key={d}>{d}</option>)}
@@ -130,15 +131,40 @@ export default function VisitorsTab({
         <select
           value={bacFilter}
           onChange={(e) => onBacFilterChange(e.target.value)}
-          className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-40"
+          className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1 min-w-0"
         >
           <option value="">Tous les bacs</option>
           {BAC_TYPES.map((b) => <option key={b}>{b}</option>)}
         </select>
+        <select
+          value={reoFilter}
+          onChange={(e) => onReoFilterChange(e.target.value)}
+          className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1 min-w-0"
+        >
+          <option value="">Lycéen & Réorientation</option>
+          <option value="false">Lycéen uniquement</option>
+          <option value="true">Réorientation uniquement</option>
+        </select>
+        <div className="flex items-center gap-1 flex-1 min-w-0">
+          <input
+            type="date"
+            value={dateFilter}
+            onChange={(e) => onDateFilterChange(e.target.value)}
+            className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+          />
+          {dateFilter && (
+            <button
+              onClick={() => onDateFilterChange('')}
+              className="text-gray-400 hover:text-gray-600 text-sm shrink-0"
+            >
+              ✕
+            </button>
+          )}
+        </div>
         <button
           onClick={onRefresh}
           disabled={loading}
-          className="border rounded-lg px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition disabled:opacity-50"
+          className="border rounded-lg px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition disabled:opacity-50 shrink-0"
         >
           {loading ? '…' : 'Actualiser'}
         </button>
@@ -168,14 +194,14 @@ export default function VisitorsTab({
                     ))}
                   </tr>
                 ))
-              ) : filtered.length === 0 ? (
+              ) : visitors.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-4 py-10 text-center text-gray-400">
                     Aucun visiteur trouvé.
                   </td>
                 </tr>
               ) : (
-                filtered.map((v) => (
+                visitors.map((v) => (
                   <tr key={v.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 font-medium text-gray-800">{v.first_name} {v.last_name}</td>
                     <td className="px-4 py-3 text-gray-500">{v.email}</td>
@@ -242,14 +268,14 @@ export default function VisitorsTab({
       {/* export */}
       <div className="flex gap-3">
         <a
-          href={getExportUrl()}
+          href={getExportUrl({ department: deptFilter, bac_type: bacFilter, reorientation: reoFilter, date: dateFilter, search: searchFilter })}
           download="visiteurs.csv"
           className="text-sm border border-gray-200 rounded-lg px-4 py-2 text-gray-600 hover:bg-gray-50 transition"
         >
-          Export complet (CSV)
+          Export filtré (CSV)
         </a>
         <a
-          href={getExportUrl('first_name,last_name,email')}
+          href={getExportUrl({ fields: 'first_name,last_name,email', department: deptFilter, bac_type: bacFilter, reorientation: reoFilter, date: dateFilter, search: searchFilter })}
           download="emails.csv"
           className="text-sm border border-gray-200 rounded-lg px-4 py-2 text-gray-600 hover:bg-gray-50 transition"
         >

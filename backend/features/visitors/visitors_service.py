@@ -1,3 +1,4 @@
+from datetime import datetime
 from bson import ObjectId
 from bson.errors import InvalidId
 from features.visitors.visitors_model import Visitor
@@ -35,7 +36,7 @@ class VisitorService:
         if filters.get("bac_type"):
             query["bac_type"] = filters["bac_type"]
 
-        if filters.get("reorientation"):
+        if filters.get("reorientation") in ("true", "false"):
             query["reorientation"] = filters["reorientation"] == "true"
 
         if filters.get("dossier_particulier"):
@@ -55,6 +56,26 @@ class VisitorService:
 
         if filters.get("specialite_2"):
             query["specialite_2"] = filters["specialite_2"]
+
+        if filters.get("search"):
+            terme = filters["search"].strip()
+            regex = {"$regex": terme, "$options": "i"}
+            query["$or"] = [
+                {"first_name": regex},
+                {"last_name": regex},
+                {"email": regex},
+                {"ine": regex},
+            ]
+
+        if filters.get("date"):
+            try:
+                d = datetime.strptime(filters["date"], "%Y-%m-%d")
+                query["created_at"] = {
+                    "$gte": d.replace(hour=0, minute=0, second=0),
+                    "$lte": d.replace(hour=23, minute=59, second=59),
+                }
+            except ValueError:
+                pass
 
         page = int(filters.get("page", 1))
         limit = int(filters.get("limit", 10))

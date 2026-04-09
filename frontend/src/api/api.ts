@@ -69,12 +69,23 @@ export async function login(password: string): Promise<boolean> {
 
 // ─── Visiteurs ───────────────────────────────────────────
 
-export async function getVisitors(page: number, limit: number, department: string, bacFilter = ''): Promise<VisitorsResponse> {
-  let url = `${BASE_URL}/visitors?page=${page}&limit=${limit}`
-  if (department) url += `&department=${department}`
-  if (bacFilter) url += `&bac_type=${encodeURIComponent(bacFilter)}`
+export async function getVisitors(
+  page: number,
+  limit: number,
+  department: string,
+  bacFilter = '',
+  reoFilter = '',
+  dateFilter = '',
+  search = '',
+): Promise<VisitorsResponse> {
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) })
+  if (department) params.set('department', department)
+  if (bacFilter) params.set('bac_type', bacFilter)
+  if (reoFilter) params.set('reorientation', reoFilter)
+  if (dateFilter) params.set('date', dateFilter)
+  if (search) params.set('search', search)
 
-  const res = await fetch(url, { headers: authHeaders() })
+  const res = await fetch(`${BASE_URL}/visitors?${params}`, { headers: authHeaders() })
   if (!res.ok) throw new Error('Erreur lors de la récupération des visiteurs')
   return res.json()
 }
@@ -139,10 +150,23 @@ export async function changePassword(_currentPassword: string, newPassword: stri
   }
 }
 
-export function getExportUrl(fields?: string): string {
+export interface ExportFilters {
+  fields?: string
+  department?: string
+  bac_type?: string
+  reorientation?: string
+  date?: string
+  search?: string
+}
+
+export function getExportUrl(filters: ExportFilters = {}): string {
   const params = new URLSearchParams()
-  if (fields) params.set('fields', fields)
   if (_token) params.set('token', _token)
-  const qs = params.toString()
-  return qs ? `${BASE_URL}/visitors/export?${qs}` : `${BASE_URL}/visitors/export`
+  if (filters.fields) params.set('fields', filters.fields)
+  if (filters.department) params.set('department', filters.department)
+  if (filters.bac_type) params.set('bac_type', filters.bac_type)
+  if (filters.reorientation) params.set('reorientation', filters.reorientation)
+  if (filters.date) params.set('date', filters.date)
+  if (filters.search) params.set('search', filters.search)
+  return `${BASE_URL}/visitors/export?${params}`
 }

@@ -36,6 +36,7 @@ def list_visitors():
 @visitors_bp.route("/api/visitors/export", methods=["GET"])
 def export_visitors():
     from core.auth_middleware import AuthMiddleware
+    from datetime import datetime
     auth_header = request.headers.get("Authorization", "")
     token_from_query = request.args.get("token", "")
     token = auth_header.replace("Bearer ", "") if auth_header.startswith("Bearer ") else token_from_query
@@ -49,27 +50,39 @@ def export_visitors():
     bac = request.args.get("bac_type")
     reo = request.args.get("reorientation")
     search = request.args.get("search")
+    date = request.args.get("date")
 
     if dep:
         query["department"] = dep
     if bac:
         query["bac_type"] = bac
-    if reo:
+    if reo in ("true", "false"):
         query["reorientation"] = (reo.lower() == "true")
     if search:
         terme = search.strip()
+        regex = {"$regex": terme, "$options": "i"}
         query["$or"] = [
-            {"first_name": {"$regex": terme, "$options": "i"}},
-            {"last_name": {"$regex": terme, "$options": "i"}},
-            {"email": {"$regex": terme, "$options": "i"}},
+            {"first_name": regex},
+            {"last_name": regex},
+            {"email": regex},
+            {"ine": regex},
         ]
+    if date:
+        try:
+            d = datetime.strptime(date, "%Y-%m-%d")
+            query["created_at"] = {
+                "$gte": d.replace(hour=0, minute=0, second=0),
+                "$lte": d.replace(hour=23, minute=59, second=59),
+            }
+        except ValueError:
+            pass
 
     visitors = list(db.visitors.find(query))
     output = io.StringIO()
     writer = csv.writer(output)
 
     fields_arg = request.args.get("fields")
-    columns = fields_arg.split(",") if fields_arg else ["first_name", "last_name", "email", "department", "bac_type", "created_at"]
+    columns = fields_arg.split(",") if fields_arg else ["first_name", "last_name", "email", "department", "bac_type", "reorientation", "ine", "created_at"]
     writer.writerow(columns)
 
     for v in visitors:
