@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getVisitors, getStats } from '../api/api'
+import { getVisitors, getStats, getToken, clearToken } from '../api/api'
 import type { Visitor, Stats } from '../api/api'
 import LoginForm from '../components/LoginForm'
 import AdminHeader from '../components/AdminHeader'
@@ -12,7 +12,7 @@ import SettingsTab from '../components/SettingsTab'
 const LIMIT = 15
 
 export default function Admin() {
-  const [authed, setAuthed] = useState(false)
+  const [authed, setAuthed] = useState(() => !!getToken())
   const [tab, setTab] = useState<TabKey>('stats')
 
   const [visitors, setVisitors] = useState<Visitor[]>([])
@@ -55,7 +55,7 @@ export default function Admin() {
   return (
     <div className="min-h-screen bg-gray-100">
 
-      <AdminHeader onLogout={() => setAuthed(false)} />
+      <AdminHeader onLogout={() => { clearToken(); setAuthed(false) }} />
 
       <TabBar activeTab={tab} onTabChange={setTab} />
 

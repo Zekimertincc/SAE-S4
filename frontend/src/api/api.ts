@@ -5,10 +5,15 @@ export const DEPARTMENTS = ['Informatique', 'GACO', 'INFOCOM', 'QLIO']
 
 // ─── Token storage ───────────────────────────────────────
 
-let _token: string | null = null
+let _token: string | null = localStorage.getItem('auth_token')
 
 export function getToken(): string | null {
   return _token
+}
+
+export function clearToken(): void {
+  _token = null
+  localStorage.removeItem('auth_token')
 }
 
 function authHeaders(): Record<string, string> {
@@ -62,6 +67,7 @@ export async function login(password: string): Promise<boolean> {
   const json = await res.json()
   if (json.token) {
     _token = json.token
+    localStorage.setItem('auth_token', json.token)
     return true
   }
   return false
@@ -116,6 +122,14 @@ export async function deleteVisitor(id: string): Promise<void> {
     headers: authHeaders(),
   })
   if (!res.ok) throw new Error('Erreur lors de la suppression du visiteur')
+}
+
+export async function deleteAllVisitors(): Promise<void> {
+  const res = await fetch(`${BASE_URL}/visitors`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  })
+  if (!res.ok) throw new Error('Erreur lors de la suppression de tous les visiteurs')
 }
 
 // ─── Stats ───────────────────────────────────────────────

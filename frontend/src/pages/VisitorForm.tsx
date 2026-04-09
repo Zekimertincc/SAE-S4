@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import { BAC_TYPES, DEPARTMENTS } from '../api/api'
@@ -9,12 +9,20 @@ const schema = z.object({
   email: z.string().email('E-mail invalide'),
   bac_type: z.string().min(1, 'Champ requis'),
   department: z.string().min(1, 'Champ requis'),
-  ine: z.string().optional(),
+  ine: z.string().length(11, 'Le numéro INE doit contenir exactement 11 caractères'),
   reorientation: z.boolean(),
 })
 
 type FormData = z.infer<typeof schema>
 type Errors = Partial<Record<keyof FormData, string>>
+
+function fieldClass(error?: string) {
+  return `w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
+    error
+      ? 'border-red-400 bg-red-50 focus:ring-red-400'
+      : 'border-gray-300 focus:ring-blue-500'
+  }`
+}
 
 export default function VisitorForm() {
   const navigate = useNavigate()
@@ -33,13 +41,30 @@ export default function VisitorForm() {
     setErrors((prev) => ({ ...prev, [name]: undefined }))
   }
 
+  function handleBlur(e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) {
+    if (e.relatedTarget instanceof HTMLButtonElement && e.relatedTarget.type === 'submit') return
+    const { name, value } = e.target
+    const updatedForm = { ...form, [name]: value }
+    const result = schema.safeParse(updatedForm)
+    if (!result.success) {
+      const issues = result.error?.issues ?? []
+      const fieldError = issues.find((err) => err.path[0] === name)
+      if (fieldError) {
+        setErrors((prev) => ({ ...prev, [name]: fieldError.message }))
+        return
+      }
+    }
+    setErrors((prev) => ({ ...prev, [name]: undefined }))
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setApiError('')
     const result = schema.safeParse(form)
     if (!result.success) {
       const errs: Errors = {}
-      result.error.errors.forEach((err) => {
+      const issues = result.error?.issues ?? []
+      issues.forEach((err) => {
         const key = err.path[0] as keyof FormData
         if (!errs[key]) errs[key] = err.message
       })
@@ -73,32 +98,32 @@ export default function VisitorForm() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Prénom *</label>
-              <input name="first_name" value={form.first_name} onChange={handleChange}
+              <input name="first_name" value={form.first_name} onChange={handleChange} onBlur={handleBlur}
                 placeholder="Marie"
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                className={fieldClass(errors.first_name)} />
               {errors.first_name && <p className="text-red-500 text-xs mt-1">{errors.first_name}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Nom *</label>
-              <input name="last_name" value={form.last_name} onChange={handleChange}
+              <input name="last_name" value={form.last_name} onChange={handleChange} onBlur={handleBlur}
                 placeholder="Dupont"
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                className={fieldClass(errors.last_name)} />
               {errors.last_name && <p className="text-red-500 text-xs mt-1">{errors.last_name}</p>}
             </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">E-mail *</label>
-            <input type="email" name="email" value={form.email} onChange={handleChange}
+            <input type="email" name="email" value={form.email} onChange={handleChange} onBlur={handleBlur}
               placeholder="marie@exemple.fr"
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              className={fieldClass(errors.email)} />
             {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Bac préparé *</label>
-            <select name="bac_type" value={form.bac_type} onChange={handleChange}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <select name="bac_type" value={form.bac_type} onChange={handleChange} onBlur={handleBlur}
+              className={fieldClass(errors.bac_type)}>
               <option value="">Sélectionner…</option>
               {BAC_TYPES.map((b) => <option key={b}>{b}</option>)}
             </select>
@@ -107,8 +132,8 @@ export default function VisitorForm() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Département visité *</label>
-            <select name="department" value={form.department} onChange={handleChange}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <select name="department" value={form.department} onChange={handleChange} onBlur={handleBlur}
+              className={fieldClass(errors.department)}>
               <option value="">Sélectionner…</option>
               {DEPARTMENTS.map((d) => <option key={d}>{d}</option>)}
             </select>
@@ -116,12 +141,14 @@ export default function VisitorForm() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Numéro INE <span className="text-gray-400 font-normal">(optionnel)</span>
-            </label>
-            <input name="ine" value={form.ine} onChange={handleChange}
-              placeholder="1234567890A" maxLength={11}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Numéro INE *</label>
+            <input name="ine" value={form.ine} onChange={handleChange} onBlur={handleBlur}
+              placeholder="123456789A" maxLength={11}
+              className={fieldClass(errors.ine)} />
+            {errors.ine
+              ? <p className="text-red-500 text-xs mt-1">{errors.ine}</p>
+              : <p className="text-gray-400 text-xs mt-1">11 caractères (ex : 123456789A)</p>
+            }
           </div>
 
           <label className="flex items-center gap-3 cursor-pointer">

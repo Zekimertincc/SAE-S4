@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { Visitor } from '../api/api'
-import { getExportUrl, updateVisitor, deleteVisitor, BAC_TYPES, DEPARTMENTS } from '../api/api'
+import { getExportUrl, updateVisitor, deleteVisitor, deleteAllVisitors, BAC_TYPES, DEPARTMENTS } from '../api/api'
 
 interface Props {
   visitors: Visitor[]
@@ -56,6 +56,21 @@ export default function VisitorsTab({
   const [editForm, setEditForm] = useState<EditForm | null>(null)
   const [saving, setSaving] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [showDeleteAll, setShowDeleteAll] = useState(false)
+  const [deletingAll, setDeletingAll] = useState(false)
+
+  async function handleDeleteAll() {
+    setDeletingAll(true)
+    try {
+      await deleteAllVisitors()
+      setShowDeleteAll(false)
+      onRefresh()
+    } catch {
+      alert('Erreur lors de la suppression.')
+    } finally {
+      setDeletingAll(false)
+    }
+  }
 
   const totalPages = Math.ceil(total / limit)
 
@@ -265,8 +280,8 @@ export default function VisitorsTab({
         )}
       </div>
 
-      {/* export */}
-      <div className="flex gap-3">
+      {/* export + actions */}
+      <div className="flex gap-3 items-center">
         <a
           href={getExportUrl({ department: deptFilter, bac_type: bacFilter, reorientation: reoFilter, date: dateFilter, search: searchFilter })}
           download="visiteurs.csv"
@@ -281,7 +296,42 @@ export default function VisitorsTab({
         >
           Liste e-mails (CSV)
         </a>
+        <button
+          onClick={() => setShowDeleteAll(true)}
+          className="text-sm border border-red-200 rounded-lg px-4 py-2 text-red-500 hover:bg-red-50 transition ml-auto"
+        >
+          Supprimer tout
+        </button>
       </div>
+
+      {/* modale confirmation suppression totale */}
+      {showDeleteAll && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 flex flex-col gap-4">
+            <h2 className="text-lg font-bold text-gray-800">Supprimer tous les visiteurs ?</h2>
+            <p className="text-sm text-gray-500">
+              Cette action est <span className="font-semibold text-red-600">irréversible</span>.
+              Tous les visiteurs enregistrés seront définitivement supprimés.
+            </p>
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                onClick={() => setShowDeleteAll(false)}
+                disabled={deletingAll}
+                className="px-4 py-2 text-sm border rounded-lg text-gray-600 hover:bg-gray-50 transition"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleDeleteAll}
+                disabled={deletingAll}
+                className="px-4 py-2 text-sm bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition disabled:opacity-60"
+              >
+                {deletingAll ? 'Suppression…' : 'Oui, tout supprimer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* edit modal */}
       {editingVisitor && editForm && (

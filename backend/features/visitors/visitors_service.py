@@ -116,3 +116,7 @@ class VisitorService:
             return result.deleted_count == 1
         except InvalidId:
             return False
+
+    def delete_all(self) -> int:
+        result = self.col.delete_many({})
+        return result.deleted_count

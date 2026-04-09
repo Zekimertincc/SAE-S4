@@ -124,3 +124,10 @@ def del_visitor(visitor_id):
     if not success:
         return jsonify({"error": "Visiteur introuvable"}), 404
     return jsonify({"message": "Visiteur supprimé"}), 200
+
+
+@visitors_bp.route("/api/visitors", methods=["DELETE"])
+@require_auth
+def delete_all_visitors():
+    count = get_service().delete_all()
+    return jsonify({"message": f"{count} visiteur(s) supprimé(s)"}), 200
