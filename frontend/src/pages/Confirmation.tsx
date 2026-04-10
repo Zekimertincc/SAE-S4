@@ -9,10 +9,12 @@ interface Visitor {
   ine?:       string
   reorientation: boolean
   immersion?:    boolean
+  dossier_particulier?: boolean
   specialite_1?: string
   specialite_2?: string
   etablissement?: string
   ville?:         string
+  created_at?: string
 }
 
 interface Feedback {
@@ -79,6 +81,17 @@ export default function Confirmation() {
   const visitor   = state?.visitor
   const feedback  = state?.feedback
 
+  const registrationDate = visitor?.created_at
+    ? new Date(visitor.created_at)
+    : new Date()
+
+  const dateStr = registrationDate.toLocaleDateString('fr-FR', {
+    weekday: 'long', day: '2-digit', month: 'long', year: 'numeric',
+  })
+  const timeStr = registrationDate.toLocaleTimeString('fr-FR', {
+    hour: '2-digit', minute: '2-digit',
+  })
+
   const btnPrimary: React.CSSProperties = {
     background: C.bordeaux, color: C.white, border: 'none',
     borderRadius: '10px', padding: '12px 20px', fontSize: '14px',
@@ -95,7 +108,21 @@ export default function Confirmation() {
   const page = (content: React.ReactNode) => (
     <>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&display=swap" rel="stylesheet" />
-      <style>{`* { box-sizing: border-box; } body { margin: 0; }`}</style>
+      <style>{`
+        * { box-sizing: border-box; } body { margin: 0; }
+        @media print {
+          body { background: white !important; }
+          .no-print { display: none !important; }
+          .print-only { display: block !important; }
+          .confirmation-card {
+            box-shadow: none !important;
+            border: 1px solid #ccc !important;
+            border-radius: 8px !important;
+            max-width: 100% !important;
+          }
+        }
+        .print-only { display: none; }
+      `}</style>
       <div style={{
         minHeight: '100vh', background: C.white,
         fontFamily: "'DM Sans', sans-serif", color: C.anthracite,
@@ -140,17 +167,20 @@ export default function Confirmation() {
     ['Département', visitor.department],
     ...(visitor.ine         ? [['INE', visitor.ine] as [string, string]] : []),
     ...(visitor.etablissement ? [['Lycée', [visitor.etablissement, visitor.ville].filter(Boolean).join(' — ')] as [string, string]] : []),
+    ['Date',        dateStr],
+    ['Heure',       timeStr],
   ]
 
   const badges: { label: string; active: boolean }[] = [
-    { label: 'Réorientation',  active: visitor.reorientation },
-    { label: 'Immersion souhaitée', active: !!visitor.immersion },
+    { label: 'Réorientation',      active: visitor.reorientation },
+    { label: 'Immersion souhaitée',active: !!visitor.immersion },
+    { label: 'Dossier particulier',active: !!visitor.dossier_particulier },
   ]
 
   // ── Rendu principal ───────────────────────────────────
 
   return page(
-    <div style={{
+    <div className="confirmation-card" style={{
       borderRadius: '20px', border: `1px solid ${C.border}`,
       boxShadow: '0 4px 28px rgba(0,0,0,0.09)', overflow: 'hidden', background: C.white,
     }}>
@@ -244,7 +274,39 @@ export default function Confirmation() {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px' }}>
+        {/* Justificatif — visible à l'écran et à l'impression */}
+        <div style={{
+          border: `1.5px dashed ${C.border}`, borderRadius: '10px',
+          padding: '12px 16px', marginBottom: '18px',
+          display: 'flex', alignItems: 'center', gap: '12px',
+        }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.bordeaux} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          <div style={{ flex: 1 }}>
+            <p style={{ margin: '0 0 2px', fontSize: '11px', fontWeight: 700, color: C.gray, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+              Justificatif de présence
+            </p>
+            <p style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: C.anthracite }}>
+              {dateStr}
+            </p>
+            <p style={{ margin: 0, fontSize: '13px', color: C.gray }}>
+              {timeStr} — JPO IUT de Montreuil
+            </p>
+          </div>
+        </div>
+
+        {/* Mention visible uniquement à l'impression */}
+        <div className="print-only" style={{
+          borderTop: `1px solid ${C.border}`, paddingTop: '10px',
+          marginTop: '4px', fontSize: '11px', color: C.gray, lineHeight: 1.6,
+        }}>
+          Document généré automatiquement lors de l'inscription à la Journée Portes Ouvertes
+          de l'IUT de Montreuil — Université Paris 8. Ce document atteste de la présence
+          de <strong>{visitor.first_name} {visitor.last_name}</strong> le {dateStr} à {timeStr}.
+        </div>
+
+        <div className="no-print" style={{ display: 'flex', gap: '10px' }}>
           <button onClick={() => navigate('/')} style={btnSecondary}>
             Nouveau visiteur
           </button>

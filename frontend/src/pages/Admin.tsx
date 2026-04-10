@@ -45,8 +45,13 @@ export default function Admin() {
       setVisitors(visitorsRes.data)
       setTotal(visitorsRes.pagination.total)
       setStats(statsRes)
-    } catch {
-      setError('Impossible de contacter le serveur.')
+    } catch (e) {
+      if ((e as Error).message === '401') {
+        clearToken()
+        setAuthed(false)
+      } else {
+        setError('Impossible de contacter le serveur.')
+      }
     } finally {
       setLoading(false)
     }
