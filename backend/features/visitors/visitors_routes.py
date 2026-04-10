@@ -53,6 +53,8 @@ def export_visitors():
     dep = request.args.get("department")
     bac = request.args.get("bac_type")
     reo = request.args.get("reorientation")
+    imm = request.args.get("immersion")
+    dos = request.args.get("dossier_particulier")
     search = request.args.get("search")
     date = request.args.get("date")
 
@@ -62,6 +64,10 @@ def export_visitors():
         query["bac_type"] = bac
     if reo in ("true", "false"):
         query["reorientation"] = (reo.lower() == "true")
+    if imm in ("true", "false"):
+        query["immersion"] = (imm.lower() == "true")
+    if dos in ("true", "false"):
+        query["dossier_particulier"] = (dos.lower() == "true")
     if search:
         terme = search.strip()
         regex = {"$regex": terme, "$options": "i"}
@@ -86,7 +92,7 @@ def export_visitors():
     writer = csv.writer(output)
 
     fields_arg = request.args.get("fields")
-    columns = fields_arg.split(",") if fields_arg else ["first_name", "last_name", "email", "department", "bac_type", "reorientation", "ine", "created_at"]
+    columns = fields_arg.split(",") if fields_arg else ["first_name", "last_name", "email", "department", "bac_type", "reorientation", "immersion", "dossier_particulier", "ine", "created_at"]
     writer.writerow(columns)
 
     for v in visitors:

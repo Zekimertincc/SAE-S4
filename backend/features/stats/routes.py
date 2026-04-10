@@ -21,3 +21,8 @@ def get_by_department():
 @stats_bp.route("/api/stats/bac_type", methods=["GET"])
 def get_by_bac_type():
     return jsonify(get_service().get_by_bac_type()), 200
+
+
+@stats_bp.route("/api/stats/date", methods=["GET"])
+def get_by_date():
+    return jsonify(get_service().get_by_date()), 200

@@ -12,3 +12,13 @@ class StatsService:
     def get_by_bac_type(self):
         pipeline = [{"$group": {"_id": "$bac_type", "count": {"$sum": 1}}}]
         return {"by_bac_type": [{"bac_type": r["_id"], "count": r["count"]} for r in self.collection.aggregate(pipeline)]}
+
+    def get_by_date(self):
+        pipeline = [
+            {"$group": {
+                "_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$created_at"}},
+                "count": {"$sum": 1}
+            }},
+            {"$sort": {"_id": 1}}
+        ]
+        return {"by_date": [{"date": r["_id"], "count": r["count"]} for r in self.collection.aggregate(pipeline)]}

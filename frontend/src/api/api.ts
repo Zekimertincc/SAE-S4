@@ -47,6 +47,7 @@ export interface Stats {
   total_visitors: number
   by_department: { department: string; count: number }[]
   by_bac_type: { bac_type: string; count: number }[]
+  by_date: { date: string; count: number }[]
 }
 
 export interface Pagination {
@@ -88,6 +89,8 @@ export async function getVisitors(
   reoFilter = '',
   dateFilter = '',
   search = '',
+  immersionFilter = '',
+  dossierFilter = '',
 ): Promise<VisitorsResponse> {
   const params = new URLSearchParams({ page: String(page), limit: String(limit) })
   if (department) params.set('department', department)
@@ -95,6 +98,8 @@ export async function getVisitors(
   if (reoFilter) params.set('reorientation', reoFilter)
   if (dateFilter) params.set('date', dateFilter)
   if (search) params.set('search', search)
+  if (immersionFilter) params.set('immersion', immersionFilter)
+  if (dossierFilter) params.set('dossier_particulier', dossierFilter)
 
   const res = await fetch(`${BASE_URL}/visitors?${params}`, { headers: authHeaders() })
   if (!res.ok) throw new Error('Erreur lors de la récupération des visiteurs')
@@ -160,18 +165,22 @@ export async function deleteAllVisitors(): Promise<void> {
 // ─── Stats ───────────────────────────────────────────────
 
 export async function getStats(): Promise<Stats> {
-  const totalRes = await fetch(`${BASE_URL}/stats/total`)
-  const deptRes = await fetch(`${BASE_URL}/stats/department`)
-  const bacRes = await fetch(`${BASE_URL}/stats/bac_type`)
+  const [totalRes, deptRes, bacRes, dateRes] = await Promise.all([
+    fetch(`${BASE_URL}/stats/total`),
+    fetch(`${BASE_URL}/stats/department`),
+    fetch(`${BASE_URL}/stats/bac_type`),
+    fetch(`${BASE_URL}/stats/date`),
+  ])
 
-  const totalJson = await totalRes.json()
-  const deptJson = await deptRes.json()
-  const bacJson = await bacRes.json()
+  const [totalJson, deptJson, bacJson, dateJson] = await Promise.all([
+    totalRes.json(), deptRes.json(), bacRes.json(), dateRes.json(),
+  ])
 
   return {
     total_visitors: totalJson.total_visitors,
     by_department: deptJson.by_department,
     by_bac_type: bacJson.by_bac_type,
+    by_date: dateJson.by_date,
   }
 }
 
@@ -194,6 +203,8 @@ export interface ExportFilters {
   department?: string
   bac_type?: string
   reorientation?: string
+  immersion?: string
+  dossier_particulier?: string
   date?: string
   search?: string
 }
@@ -205,6 +216,8 @@ export function getExportUrl(filters: ExportFilters = {}): string {
   if (filters.department) params.set('department', filters.department)
   if (filters.bac_type) params.set('bac_type', filters.bac_type)
   if (filters.reorientation) params.set('reorientation', filters.reorientation)
+  if (filters.immersion) params.set('immersion', filters.immersion)
+  if (filters.dossier_particulier) params.set('dossier_particulier', filters.dossier_particulier)
   if (filters.date) params.set('date', filters.date)
   if (filters.search) params.set('search', filters.search)
   return `${BASE_URL}/visitors/export?${params}`

@@ -21,23 +21,25 @@ export default function Admin() {
   const [stats,         setStats]         = useState<Stats | null>(null)
   const [total,         setTotal]         = useState(0)
   const [page,          setPage]          = useState(1)
-  const [deptFilter,    setDeptFilter]    = useState('')
-  const [bacFilter,     setBacFilter]     = useState('')
-  const [reoFilter,     setReoFilter]     = useState('')
-  const [dateFilter,    setDateFilter]    = useState('')
-  const [searchFilter,  setSearchFilter]  = useState('')
-  const [loading,       setLoading]       = useState(false)
-  const [error,         setError]         = useState('')
+  const [deptFilter,      setDeptFilter]      = useState('')
+  const [bacFilter,       setBacFilter]       = useState('')
+  const [reoFilter,       setReoFilter]       = useState('')
+  const [immersionFilter, setImmersionFilter] = useState('')
+  const [dossierFilter,   setDossierFilter]   = useState('')
+  const [dateFilter,      setDateFilter]      = useState('')
+  const [searchFilter,    setSearchFilter]    = useState('')
+  const [loading,         setLoading]         = useState(false)
+  const [error,           setError]           = useState('')
 
   useEffect(() => {
     if (authed) fetchAll()
-  }, [authed, deptFilter, bacFilter, reoFilter, dateFilter, searchFilter, page])
+  }, [authed, deptFilter, bacFilter, reoFilter, immersionFilter, dossierFilter, dateFilter, searchFilter, page])
 
   async function fetchAll() {
     setLoading(true); setError('')
     try {
       const [visitorsRes, statsRes] = await Promise.all([
-        getVisitors(page, LIMIT, deptFilter, bacFilter, reoFilter, dateFilter, searchFilter),
+        getVisitors(page, LIMIT, deptFilter, bacFilter, reoFilter, dateFilter, searchFilter, immersionFilter, dossierFilter),
         getStats(),
       ])
       setVisitors(visitorsRes.data)
@@ -84,12 +86,15 @@ export default function Admin() {
             <VisitorsTab
               visitors={visitors} total={total} page={page} limit={LIMIT} loading={loading}
               deptFilter={deptFilter} bacFilter={bacFilter} reoFilter={reoFilter}
+              immersionFilter={immersionFilter} dossierFilter={dossierFilter}
               dateFilter={dateFilter} searchFilter={searchFilter}
-              onDeptFilterChange={v => { setDeptFilter(v);   setPage(1) }}
-              onBacFilterChange={v  => { setBacFilter(v);    setPage(1) }}
-              onReoFilterChange={v  => { setReoFilter(v);    setPage(1) }}
-              onDateFilterChange={v => { setDateFilter(v);   setPage(1) }}
-              onSearchChange={v     => { setSearchFilter(v); setPage(1) }}
+              onDeptFilterChange={v      => { setDeptFilter(v);      setPage(1) }}
+              onBacFilterChange={v       => { setBacFilter(v);       setPage(1) }}
+              onReoFilterChange={v       => { setReoFilter(v);       setPage(1) }}
+              onImmersionFilterChange={v => { setImmersionFilter(v); setPage(1) }}
+              onDossierFilterChange={v   => { setDossierFilter(v);   setPage(1) }}
+              onDateFilterChange={v      => { setDateFilter(v);      setPage(1) }}
+              onSearchChange={v          => { setSearchFilter(v);    setPage(1) }}
               onPageChange={setPage}
               onRefresh={fetchAll}
             />

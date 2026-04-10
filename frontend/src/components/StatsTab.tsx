@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import StatCard from './StatCard'
 import BarChart from './BarChart'
 import PieChart from './PieChart'
@@ -6,6 +7,8 @@ import { C, font } from '../theme'
 
 interface Props { stats: Stats | null; visitors: Visitor[] }
 
+type ChartType = 'bar' | 'pie'
+
 const ICONS = {
   users:     'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm10 4a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2 6v-1a3 3 0 0 0-3-3h-1',
   dept:      'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM9 22V12h6v10',
@@ -13,6 +16,22 @@ const ICONS = {
   reo:       'M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6',
   immersion: 'M12 2a10 10 0 1 1 0 20A10 10 0 0 1 12 2zm0 6v4l3 3',
   star:      'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z',
+}
+
+function BarIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="12" width="4" height="9"/><rect x="10" y="6" width="4" height="15"/><rect x="17" y="3" width="4" height="18"/>
+    </svg>
+  )
+}
+
+function PieIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>
+    </svg>
+  )
 }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
@@ -26,7 +45,17 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   )
 }
 
-function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
+function ChartCard({
+  title,
+  barData,
+  pieData,
+}: {
+  title: string
+  barData: { label: string; count: number }[]
+  pieData: { label: string; value: number }[]
+}) {
+  const [type, setType] = useState<ChartType>('bar')
+
   return (
     <div style={{
       background: C.white,
@@ -36,10 +65,33 @@ function ChartCard({ title, children }: { title: string; children: React.ReactNo
       padding: '20px 22px',
       fontFamily: font,
     }}>
-      <p style={{ margin: '0 0 14px', fontSize: '13px', fontWeight: 700, color: C.anthracite }}>
-        {title}
-      </p>
-      {children}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+        <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: C.anthracite }}>{title}</p>
+        <div style={{ display: 'flex', borderRadius: '8px', border: `1px solid ${C.border}`, overflow: 'hidden' }}>
+          {(['bar', 'pie'] as ChartType[]).map(t => (
+            <button
+              key={t}
+              onClick={() => setType(t)}
+              title={t === 'bar' ? 'Barres' : 'Camembert'}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '5px',
+                padding: '5px 10px', border: 'none', cursor: 'pointer',
+                fontSize: '12px', fontWeight: 600, fontFamily: font,
+                background: type === t ? C.bordeaux : C.white,
+                color: type === t ? C.white : C.gray,
+                transition: 'all 0.15s',
+              }}
+            >
+              {t === 'bar' ? <BarIcon /> : <PieIcon />}
+              {t === 'bar' ? 'Barres' : 'Camembert'}
+            </button>
+          ))}
+        </div>
+      </div>
+      {type === 'bar'
+        ? <BarChart data={barData} />
+        : <PieChart data={pieData} />
+      }
     </div>
   )
 }
@@ -55,6 +107,10 @@ export default function StatsTab({ stats, visitors }: Props) {
 
   const deptData = (stats?.by_department ?? []).map(d => ({ label: d.department, count: d.count }))
   const bacData  = (stats?.by_bac_type  ?? []).map(d => ({ label: d.bac_type,    count: d.count }))
+  const dateData = (stats?.by_date ?? []).map(d => ({
+    label: new Date(d.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
+    count: d.count,
+  }))
 
   return (
     <>
@@ -75,51 +131,18 @@ export default function StatsTab({ stats, visitors }: Props) {
         <section>
           <SectionTitle>Vue d'ensemble</SectionTitle>
           <div className="stats-kpi">
+            <StatCard label="Total visiteurs" value={stats?.total_visitors ?? '—'} accent="bordeaux" icon={ICONS.users} />
             <StatCard
-              label="Total visiteurs"
-              value={stats?.total_visitors ?? '—'}
-              accent="bordeaux"
-              icon={ICONS.users}
+              label="Réorientations" value={reorientationCount} accent="bordeaux" icon={ICONS.reo}
+              sub={stats?.total_visitors && reorientationCount ? `${Math.round((reorientationCount / stats.total_visitors) * 100)} % des inscrits` : undefined}
             />
-            <StatCard
-              label="Réorientations"
-              value={reorientationCount}
-              accent="bordeaux"
-              icon={ICONS.reo}
-              sub={
-                stats?.total_visitors && reorientationCount
-                  ? `${Math.round((reorientationCount / stats.total_visitors) * 100)} % des inscrits`
-                  : undefined
-              }
-            />
-            <StatCard
-              label="Types de bac"
-              value={stats?.by_bac_type.length ?? '—'}
-              accent="sauge"
-              icon={ICONS.bac}
-            />
-            <StatCard
-              label="Départements"
-              value={stats?.by_department.length ?? '—'}
-              accent="sauge"
-              icon={ICONS.dept}
-            />
+            <StatCard label="Types de bac"  value={stats?.by_bac_type.length ?? '—'}   accent="sauge" icon={ICONS.bac} />
+            <StatCard label="Départements"  value={stats?.by_department.length ?? '—'}  accent="sauge" icon={ICONS.dept} />
             {immersionCount > 0 && (
-              <StatCard
-                label="Immersions"
-                value={immersionCount}
-                accent="amber"
-                icon={ICONS.immersion}
-              />
+              <StatCard label="Immersions" value={immersionCount} accent="amber" icon={ICONS.immersion} />
             )}
             {avgRating !== null && (
-              <StatCard
-                label="Note moyenne"
-                value={`${avgRating} / 5`}
-                accent="amber"
-                icon={ICONS.star}
-                sub={`${rated.length} avis`}
-              />
+              <StatCard label="Note moyenne" value={`${avgRating} / 5`} accent="amber" icon={ICONS.star} sub={`${rated.length} avis`} />
             )}
           </div>
         </section>
@@ -127,23 +150,31 @@ export default function StatsTab({ stats, visitors }: Props) {
         <section>
           <SectionTitle>Répartitions</SectionTitle>
           <div className="stats-charts">
-            <ChartCard title="Inscriptions par département">
-              <BarChart data={deptData} />
-            </ChartCard>
-
-            <ChartCard title="Inscriptions par type de bac">
-              <BarChart data={bacData} />
-            </ChartCard>
-
-            <ChartCard title="Répartition par département">
-              <PieChart data={deptData.map(d => ({ label: d.label, value: d.count }))} />
-            </ChartCard>
-
-            <ChartCard title="Répartition par type de bac">
-              <PieChart data={bacData.map(d => ({ label: d.label, value: d.count }))} />
-            </ChartCard>
+            <ChartCard
+              title="Par département"
+              barData={deptData}
+              pieData={deptData.map(d => ({ label: d.label, value: d.count }))}
+            />
+            <ChartCard
+              title="Par type de bac"
+              barData={bacData}
+              pieData={bacData.map(d => ({ label: d.label, value: d.count }))}
+            />
           </div>
         </section>
+
+        {dateData.length > 0 && (
+          <section>
+            <SectionTitle>Inscriptions par jour</SectionTitle>
+            <div style={{
+              background: C.white, border: `1px solid ${C.border}`,
+              borderRadius: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+              padding: '20px 22px', fontFamily: font,
+            }}>
+              <BarChart data={dateData} />
+            </div>
+          </section>
+        )}
 
       </div>
     </>
