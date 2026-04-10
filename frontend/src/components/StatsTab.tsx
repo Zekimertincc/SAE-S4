@@ -107,6 +107,10 @@ export default function StatsTab({ stats, visitors }: Props) {
 
   const deptData = (stats?.by_department ?? []).map(d => ({ label: d.department, count: d.count }))
   const bacData  = (stats?.by_bac_type  ?? []).map(d => ({ label: d.bac_type,    count: d.count }))
+  const dateData = (stats?.by_date ?? []).map(d => ({
+    label: new Date(d.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
+    count: d.count,
+  }))
 
   return (
     <>
@@ -158,6 +162,19 @@ export default function StatsTab({ stats, visitors }: Props) {
             />
           </div>
         </section>
+
+        {dateData.length > 0 && (
+          <section>
+            <SectionTitle>Inscriptions par jour</SectionTitle>
+            <div style={{
+              background: C.white, border: `1px solid ${C.border}`,
+              borderRadius: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+              padding: '20px 22px', fontFamily: font,
+            }}>
+              <BarChart data={dateData} />
+            </div>
+          </section>
+        )}
 
       </div>
     </>

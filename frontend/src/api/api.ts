@@ -47,6 +47,7 @@ export interface Stats {
   total_visitors: number
   by_department: { department: string; count: number }[]
   by_bac_type: { bac_type: string; count: number }[]
+  by_date: { date: string; count: number }[]
 }
 
 export interface Pagination {
@@ -164,18 +165,22 @@ export async function deleteAllVisitors(): Promise<void> {
 // ─── Stats ───────────────────────────────────────────────
 
 export async function getStats(): Promise<Stats> {
-  const totalRes = await fetch(`${BASE_URL}/stats/total`)
-  const deptRes = await fetch(`${BASE_URL}/stats/department`)
-  const bacRes = await fetch(`${BASE_URL}/stats/bac_type`)
+  const [totalRes, deptRes, bacRes, dateRes] = await Promise.all([
+    fetch(`${BASE_URL}/stats/total`),
+    fetch(`${BASE_URL}/stats/department`),
+    fetch(`${BASE_URL}/stats/bac_type`),
+    fetch(`${BASE_URL}/stats/date`),
+  ])
 
-  const totalJson = await totalRes.json()
-  const deptJson = await deptRes.json()
-  const bacJson = await bacRes.json()
+  const [totalJson, deptJson, bacJson, dateJson] = await Promise.all([
+    totalRes.json(), deptRes.json(), bacRes.json(), dateRes.json(),
+  ])
 
   return {
     total_visitors: totalJson.total_visitors,
     by_department: deptJson.by_department,
     by_bac_type: bacJson.by_bac_type,
+    by_date: dateJson.by_date,
   }
 }
 
