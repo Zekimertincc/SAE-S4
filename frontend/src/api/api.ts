@@ -88,6 +88,8 @@ export async function getVisitors(
   reoFilter = '',
   dateFilter = '',
   search = '',
+  immersionFilter = '',
+  dossierFilter = '',
 ): Promise<VisitorsResponse> {
   const params = new URLSearchParams({ page: String(page), limit: String(limit) })
   if (department) params.set('department', department)
@@ -95,6 +97,8 @@ export async function getVisitors(
   if (reoFilter) params.set('reorientation', reoFilter)
   if (dateFilter) params.set('date', dateFilter)
   if (search) params.set('search', search)
+  if (immersionFilter) params.set('immersion', immersionFilter)
+  if (dossierFilter) params.set('dossier_particulier', dossierFilter)
 
   const res = await fetch(`${BASE_URL}/visitors?${params}`, { headers: authHeaders() })
   if (!res.ok) throw new Error('Erreur lors de la récupération des visiteurs')
@@ -194,6 +198,8 @@ export interface ExportFilters {
   department?: string
   bac_type?: string
   reorientation?: string
+  immersion?: string
+  dossier_particulier?: string
   date?: string
   search?: string
 }
@@ -205,6 +211,8 @@ export function getExportUrl(filters: ExportFilters = {}): string {
   if (filters.department) params.set('department', filters.department)
   if (filters.bac_type) params.set('bac_type', filters.bac_type)
   if (filters.reorientation) params.set('reorientation', filters.reorientation)
+  if (filters.immersion) params.set('immersion', filters.immersion)
+  if (filters.dossier_particulier) params.set('dossier_particulier', filters.dossier_particulier)
   if (filters.date) params.set('date', filters.date)
   if (filters.search) params.set('search', filters.search)
   return `${BASE_URL}/visitors/export?${params}`

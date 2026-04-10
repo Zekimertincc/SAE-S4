@@ -1,20 +1,22 @@
 import { useState } from 'react'
 import type { Visitor } from '../api/api'
-import { getExportUrl, updateVisitor, deleteVisitor, deleteAllVisitors, BAC_TYPES, DEPARTMENTS } from '../api/api'
+import { getToken, updateVisitor, deleteVisitor, deleteAllVisitors, BAC_TYPES, DEPARTMENTS } from '../api/api'
 import { C, font, inputStyle, labelStyle, btnPrimary, btnSecondary, btnDanger, card } from '../theme'
 
 interface Props {
   visitors: Visitor[]; total: number; page: number; limit: number; loading: boolean
-  deptFilter: string; bacFilter: string; reoFilter: string; dateFilter: string; searchFilter: string
+  deptFilter: string; bacFilter: string; reoFilter: string; immersionFilter: string
+  dossierFilter: string; dateFilter: string; searchFilter: string
   onDeptFilterChange: (v: string) => void; onBacFilterChange: (v: string) => void
-  onReoFilterChange: (v: string) => void; onDateFilterChange: (v: string) => void
+  onReoFilterChange: (v: string) => void; onImmersionFilterChange: (v: string) => void
+  onDossierFilterChange: (v: string) => void; onDateFilterChange: (v: string) => void
   onSearchChange: (v: string) => void; onPageChange: (p: number) => void; onRefresh: () => void
 }
 
 interface EditForm {
   first_name: string; last_name: string; email: string
   bac_type: string; department: string; ine: string
-  reorientation: boolean; dossier_particulier: boolean
+  reorientation: boolean; immersion: boolean; dossier_particulier: boolean
 }
 
 function FilterInput({ value, onChange, placeholder, type = 'text' }: {
@@ -78,9 +80,9 @@ function ModalSelect({ label, value, onChange, options }: {
 
 export default function VisitorsTab({
   visitors, total, page, limit, loading,
-  deptFilter, bacFilter, reoFilter, dateFilter, searchFilter,
-  onDeptFilterChange, onBacFilterChange, onReoFilterChange,
-  onDateFilterChange, onSearchChange, onPageChange, onRefresh,
+  deptFilter, bacFilter, reoFilter, immersionFilter, dossierFilter, dateFilter, searchFilter,
+  onDeptFilterChange, onBacFilterChange, onReoFilterChange, onImmersionFilterChange,
+  onDossierFilterChange, onDateFilterChange, onSearchChange, onPageChange, onRefresh,
 }: Props) {
   const [editingVisitor, setEditingVisitor] = useState<Visitor | null>(null)
   const [editForm,       setEditForm]       = useState<EditForm | null>(null)
@@ -93,7 +95,7 @@ export default function VisitorsTab({
 
   function openEdit(v: Visitor) {
     setEditingVisitor(v)
-    setEditForm({ first_name: v.first_name, last_name: v.last_name, email: v.email, bac_type: v.bac_type, department: v.department, ine: v.ine ?? '', reorientation: v.reorientation, dossier_particulier: v.dossier_particulier })
+    setEditForm({ first_name: v.first_name, last_name: v.last_name, email: v.email, bac_type: v.bac_type, department: v.department, ine: v.ine ?? '', reorientation: v.reorientation, immersion: v.immersion, dossier_particulier: v.dossier_particulier })
   }
   function closeEdit() { setEditingVisitor(null); setEditForm(null) }
 
@@ -118,6 +120,33 @@ export default function VisitorsTab({
     try { await deleteAllVisitors(); setShowDeleteAll(false); onRefresh() }
     catch { alert('Erreur lors de la suppression.') }
     finally { setDeletingAll(false) }
+  }
+
+  async function handleExport(filename: string, fields?: string) {
+    const token = getToken()
+    if (!token) return
+    const params = new URLSearchParams({ token })
+    if (fields)            params.set('fields', fields)
+    if (deptFilter)        params.set('department', deptFilter)
+    if (bacFilter)         params.set('bac_type', bacFilter)
+    if (reoFilter)         params.set('reorientation', reoFilter)
+    if (immersionFilter)   params.set('immersion', immersionFilter)
+    if (dossierFilter)     params.set('dossier_particulier', dossierFilter)
+    if (dateFilter)        params.set('date', dateFilter)
+    if (searchFilter)      params.set('search', searchFilter)
+
+    try {
+      const res = await fetch(`http://127.0.0.1:5000/api/visitors/export?${params}`)
+      if (!res.ok) throw new Error()
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url; a.download = filename
+      document.body.appendChild(a); a.click()
+      document.body.removeChild(a); URL.revokeObjectURL(url)
+    } catch {
+      alert('Erreur lors de l\'export.')
+    }
   }
 
 
@@ -151,6 +180,16 @@ export default function VisitorsTab({
           <option value="">Lycéen & Réorientation</option>
           <option value="false">Lycéen uniquement</option>
           <option value="true">Réorientation uniquement</option>
+        </FilterSelect>
+        <FilterSelect value={immersionFilter} onChange={v => { onImmersionFilterChange(v) }}>
+          <option value="">Immersion (tous)</option>
+          <option value="true">Immersion souhaitée</option>
+          <option value="false">Sans immersion</option>
+        </FilterSelect>
+        <FilterSelect value={dossierFilter} onChange={v => { onDossierFilterChange(v) }}>
+          <option value="">Dossier (tous)</option>
+          <option value="true">Dossier particulier</option>
+          <option value="false">Sans dossier</option>
         </FilterSelect>
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
           <FilterInput type="date" value={dateFilter} onChange={v => { onDateFilterChange(v) }} />
@@ -204,15 +243,37 @@ export default function VisitorsTab({
                     {new Date(v.created_at).toLocaleDateString('fr-FR')}
                   </td>
                   <td style={td}>
-                    <span style={{
-                      display: 'inline-block', fontSize: '11px', fontWeight: 600,
-                      padding: '3px 9px', borderRadius: '20px',
-                      background: v.reorientation ? '#fef3c7' : C.saugeLight,
-                      color:      v.reorientation ? '#92400e'  : C.saugeDark,
-                      border: `1px solid ${v.reorientation ? '#f3e08a' : C.sauge}`,
-                    }}>
-                      {v.reorientation ? 'Réorientation' : 'Lycéen'}
-                    </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{
+                        display: 'inline-block', fontSize: '11px', fontWeight: 600,
+                        padding: '3px 9px', borderRadius: '20px',
+                        background: v.reorientation ? '#fef3c7' : C.saugeLight,
+                        color:      v.reorientation ? '#92400e'  : C.saugeDark,
+                        border: `1px solid ${v.reorientation ? '#f3e08a' : C.sauge}`,
+                      }}>
+                        {v.reorientation ? 'Réorientation' : 'Lycéen'}
+                      </span>
+                      {v.immersion && (
+                        <span style={{
+                          display: 'inline-block', fontSize: '11px', fontWeight: 600,
+                          padding: '3px 9px', borderRadius: '20px',
+                          background: '#eff6ff', color: '#1d4ed8',
+                          border: '1px solid #bfdbfe',
+                        }}>
+                          Immersion
+                        </span>
+                      )}
+                      {v.dossier_particulier && (
+                        <span style={{
+                          display: 'inline-block', fontSize: '11px', fontWeight: 600,
+                          padding: '3px 9px', borderRadius: '20px',
+                          background: '#fdf4ff', color: '#7e22ce',
+                          border: '1px solid #e9d5ff',
+                        }}>
+                          Dossier particulier
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td style={td}>
                     <div style={{ display: 'flex', gap: '12px' }}>
@@ -245,14 +306,12 @@ export default function VisitorsTab({
       </div>
 
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
-        <a href={getExportUrl({ department: deptFilter, bac_type: bacFilter, reorientation: reoFilter, date: dateFilter, search: searchFilter })}
-          download="visiteurs.csv" style={exportBtn}>
+        <button onClick={() => handleExport('visiteurs.csv')} style={exportBtn}>
           ↓ Export filtré (CSV)
-        </a>
-        <a href={getExportUrl({ fields: 'first_name,last_name,email', department: deptFilter, bac_type: bacFilter, reorientation: reoFilter, date: dateFilter, search: searchFilter })}
-          download="emails.csv" style={exportBtn}>
+        </button>
+        <button onClick={() => handleExport('emails.csv', 'first_name,last_name,email')} style={exportBtn}>
           ↓ Liste e-mails (CSV)
-        </a>
+        </button>
         <button onClick={() => setShowDeleteAll(true)}
           style={{ ...btnSecondary, fontSize: '13px', padding: '9px 16px', color: C.red, borderColor: '#fecaca', marginLeft: 'auto' }}>
           Supprimer tout
@@ -298,9 +357,10 @@ export default function VisitorsTab({
             </div>
             <ModalInput label="INE (optionnel)" value={editForm.ine} onChange={v => setEditForm({ ...editForm, ine: v.toUpperCase() })} />
 
-            <div style={{ display: 'flex', gap: '20px' }}>
+            <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
               {[
                 { key: 'reorientation' as const, label: 'Réorientation' },
+                { key: 'immersion' as const, label: 'Immersion' },
                 { key: 'dossier_particulier' as const, label: 'Dossier particulier' },
               ].map(({ key, label }) => (
                 <label key={key} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', color: C.anthracite }}>
