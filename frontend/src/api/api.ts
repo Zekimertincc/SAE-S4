@@ -102,6 +102,7 @@ export async function getVisitors(
   if (dossierFilter) params.set('dossier_particulier', dossierFilter)
 
   const res = await fetch(`${BASE_URL}/visitors?${params}`, { headers: authHeaders() })
+  if (res.status === 401) { clearToken(); throw new Error('401') }
   if (!res.ok) throw new Error('Erreur lors de la récupération des visiteurs')
   return res.json()
 }
