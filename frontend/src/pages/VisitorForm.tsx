@@ -518,7 +518,7 @@ export default function VisitorForm() {
     setApiError('')
     setLoading(true)
     try {
-      const res = await fetch('http://127.0.0.1:5000/api/visitors', {
+      const res = await fetch('/api/visitors', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...form, ine: form.ine || null, rgpd_consent: true }),
@@ -541,7 +541,7 @@ export default function VisitorForm() {
 
     if (feedback && savedVisitor && (savedVisitor as { id?: string }).id) {
       try {
-        await fetch(`http://127.0.0.1:5000/api/visitors/${(savedVisitor as { id: string }).id}/feedback`, {
+        await fetch(`/api/visitors/${(savedVisitor as { id: string }).id}/feedback`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(feedback),

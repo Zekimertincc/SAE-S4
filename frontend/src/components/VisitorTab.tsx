@@ -136,7 +136,7 @@ export default function VisitorsTab({
     if (searchFilter)      params.set('search', searchFilter)
 
     try {
-      const res = await fetch(`http://127.0.0.1:5000/api/visitors/export?${params}`)
+      const res = await fetch(`/api/visitors/export?${params}`)
       if (!res.ok) throw new Error()
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)

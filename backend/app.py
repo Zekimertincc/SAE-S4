@@ -1,13 +1,14 @@
 from flask import Flask
 from flask_cors import CORS
 from core.database import init_db
+from config import Config
 from features.visitors.visitors_routes import visitors_bp
 from features.auth.routes import auth_bp
 from features.stats.routes import stats_bp
 from features.managers.managers_routes import managers_bp
 
 app = Flask(__name__)
-app.config["MONGO_URI"] = "mongodb://localhost:27017/sae_jpo"
+app.config["MONGO_URI"] = Config.MONGO_URI
 app.config["JSON_ENSURE_ASCII"] = False
 
 CORS(app, origins=["http://localhost:3000", "http://localhost:5173"], methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
